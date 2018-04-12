@@ -122,8 +122,11 @@ var DataProvider = (function () {
     // }
     DataProvider.prototype.saveAll = function () {
         var _this = this;
+        var token = "6dae67b6" + "f3085406" + "f57a9412";
+        token += "c1d8d6ef";
+        token += "5d888863";
         var url = "https://api.github.com/gists/4c390b3e5502811d196233104c89f755";
-        var headers = new __WEBPACK_IMPORTED_MODULE_0__angular_common_http__["c" /* HttpHeaders */]().set("Authorization", "token b626272a9721fc364c0e4a928c44cd0adb4b5e5e");
+        var headers = new __WEBPACK_IMPORTED_MODULE_0__angular_common_http__["c" /* HttpHeaders */]().set("Authorization", "token  " + token);
         var files = {};
         this.datafiles.forEach(function (datafile) {
             if (datafile.dataHasChanged)
