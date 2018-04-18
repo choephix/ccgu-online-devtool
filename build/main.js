@@ -38,6 +38,7 @@ var DataProvider = (function () {
         this.FILE_CONFIG = "editor-stuff.json";
         this.FILE_PDC = "pdc.json";
         this.cardsMap = new Map();
+        this.pdcMap = new Map();
         this.config = new DataFile(this.FILE_CONFIG, http);
         this.cards = new DataFile(this.FILE_CARDS, http);
         this.pdc = new DataFile(this.FILE_PDC, http);
@@ -65,6 +66,19 @@ var DataProvider = (function () {
         this.cards.dataHasChanged = true;
         return card;
     };
+    DataProvider.prototype.createPDC = function (origin, at) {
+        var pdc = {
+            origin: origin,
+            name: "",
+            notes_character: "",
+            notes_cardstats: "",
+            tags: [],
+            faction: "",
+            guid: GUID.make()
+        };
+        this.pdc.data.splice(at, 0, pdc);
+        return pdc;
+    };
     DataProvider.prototype.deleteCard = function (id) {
         delete this.cardsMap[id];
         for (var i = this.cards.data.length - 1; i >= 0; i--)
@@ -73,13 +87,21 @@ var DataProvider = (function () {
         this.cards.dataHasChanged = true;
     };
     DataProvider.prototype.getCardSectionData = function (index) { return this.config.data.cardSections[index % this.config.data.cardSections.length]; };
+    DataProvider.prototype.anyCardHasPDC = function (pdc) {
+        if (!this.cards.data)
+            return false;
+        for (var i = 0; i < this.cards.data.length; i++)
+            if (this.cards.data[i].pdc == pdc.guid)
+                return true;
+        return false;
+    };
     ///
     DataProvider.prototype.loadAll = function () {
         var _this = this;
         console.log("loading data from github gist");
         this.config.load(function (data) { return _this.onLoaded_Configuration(data); });
         this.cards.load(function (data) { return _this.onLoaded_Cards(data); });
-        // this.pdc.load( data => this.onLoaded_PDCharacters( data ) );
+        this.pdc.load(function (data) { return _this.onLoaded_PDCharacters(data); });
     };
     DataProvider.prototype.onLoaded_Configuration = function (data) {
         this.events.publish("data:reload");
@@ -115,13 +137,22 @@ var DataProvider = (function () {
             this.cardsMap[data[i].id] = __WEBPACK_IMPORTED_MODULE_3__app_models__["a" /* CardModel */].makeFromData(data[i]);
         this.events.publish("data:reload");
     };
-    // private onLoaded_PDCharacters( data:PDCharacterData[] )
-    // {
-    //   this.events.publish( "data:reload" );
-    //   // this.characters.sort( (a,b) => a.origin < b.origin ? -1 : 1 );
-    // }
+    DataProvider.prototype.onLoaded_PDCharacters = function (data) {
+        for (var i = data.length - 1; i >= 0; i--)
+            this.pdcMap[data[i].guid] = data[i];
+        this.events.publish("data:reload");
+    };
+    DataProvider.prototype.sortPDCs = function () {
+        this.pdc.data.sort(sortFunction);
+        function sortFunction(aa, bb) {
+            var a = aa.origin.toUpperCase();
+            var b = bb.origin.toUpperCase();
+            return a < b ? -1 : a > b ? 1 : 0;
+        }
+    };
     DataProvider.prototype.saveAll = function () {
         var _this = this;
+        this.sortPDCs();
         var token = "6dae67b6" + "f3085406" + "f57a9412";
         token += "c1d8d6ef";
         token += "5d888863";
@@ -207,6 +238,17 @@ var ConfigurationData = (function () {
         ];
     }
     return ConfigurationData;
+}());
+var GUID = (function () {
+    function GUID() {
+    }
+    GUID.make = function () {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    };
+    return GUID;
 }());
 //# sourceMappingURL=data.js.map
 
@@ -647,9 +689,9 @@ var ListPage = (function () {
             var props = this.getDefaultPropsFor(col, row);
             if (props["type"] == __WEBPACK_IMPORTED_MODULE_1__app_models__["b" /* CardType */].Trap)
                 return "trap";
-            if (props["description"] == "#grand\n")
+            if (props["tags"] && props["tags"].indexOf("grand") >= 0)
                 return "grand";
-            if (props["description"] == "#sneak\n")
+            if (props["tags"] && props["tags"].indexOf("sneak") >= 0)
                 return "sneak";
             return "normal";
         }
@@ -690,6 +732,13 @@ var ListPage = (function () {
             s += '⭐';
         return s;
     };
+    ListPage.prototype.getPDC = function (cv) {
+        if (!cv.model)
+            return null;
+        if (!cv.model.hasPDC)
+            return null;
+        return this.data.pdcMap[cv.model.properties.pdc];
+    };
     ListPage.PAGE_CARDS_COUNT = 256;
     ListPage.PAGE_COLUMNS = 16;
     ListPage.PAGE_ROWS = Math.ceil(ListPage_1.PAGE_CARDS_COUNT / ListPage_1.PAGE_COLUMNS);
@@ -703,7 +752,7 @@ var ListPage = (function () {
     ], ListPage.prototype, "lescroll", void 0);
     ListPage = ListPage_1 = __decorate([
         Object(__WEBPACK_IMPORTED_MODULE_0__angular_core__["m" /* Component */])({
-            selector: 'page-list',template:/*ion-inline-start:"C:\Projects Temp\ccgu-admin-tool\src\pages\list\list.html"*/'<ion-header>\n\n  <ion-navbar color="primary">\n\n\n\n    <!-- <button ion-button menuToggle end>\n\n      <ion-icon name="menu"></ion-icon>\n\n    </button> -->\n\n\n\n    <ion-grid grid-padding-width="1px">\n\n      <ion-row class="filters">\n\n        <ion-col no-padding *ngFor="let bundle of bundles">\n\n          <button \n\n            color="light"\n\n            class="page-button"\n\n            [class.selected]="bundle==selectedBundle" \n\n            (click)="selectBundle(bundle)"\n\n            ion-button [clear]="bundle!=selectedBundle"  full round>\n\n            {{ bundle.name }}\n\n          </button>\n\n        </ion-col>\n\n      </ion-row>\n\n    </ion-grid>\n\n\n\n  </ion-navbar>\n\n</ion-header>\n\n\n\n<ion-content no-scroll>\n\n\n\n  <ion-fab bottom right #fabMode>\n\n    <button ion-fab large><ion-icon [name]="mode.icon"></ion-icon></button>\n\n    <ion-fab-list side="left">\n\n      <button ion-fab (click)="setMode(Mode.Edit);fabMode.close()"><ion-icon name="{{Mode.Edit.icon}}"></ion-icon></button>\n\n      <button ion-fab (click)="setMode(Mode.Move);fabMode.close()"><ion-icon name="{{Mode.Move.icon}}"></ion-icon></button>\n\n      <button ion-fab (click)="setMode(Mode.PDCs);fabMode.close()"><ion-icon name="{{Mode.PDCs.icon}}"></ion-icon></button>\n\n      <button ion-fab (click)="setMode(Mode.Quik);fabMode.close()"><ion-icon name="{{Mode.Quik.icon}}"></ion-icon></button>\n\n      <button ion-fab (click)="setMode(Mode.View);fabMode.close()"><ion-icon name="{{Mode.View.icon}}"></ion-icon></button>\n\n    </ion-fab-list>\n\n    <ion-fab-list side="top">\n\n      <button ion-fab (click)="showPrettyName=!showPrettyName;fabMode.close()"><ion-icon name="glasses"></ion-icon></button>\n\n      <button ion-fab (click)="data.saveAll();fabMode.close()"><ion-icon name="cloud-upload"></ion-icon></button>\n\n      <button ion-fab (click)="data.loadAll();fabMode.close()"><ion-icon name="cloud-download"></ion-icon></button>\n\n    </ion-fab-list>\n\n  </ion-fab>\n\n  <ion-fab bottom left #fabZoom>\n\n    <button ion-fab large><ion-icon name="search"></ion-icon></button>\n\n    <ion-fab-list side="top">\n\n      <button ion-fab (click)="zoom=1.00;fabZoom.close();">100%</button>\n\n      <button ion-fab (click)="zoom=0.75;fabZoom.close();">75%</button>\n\n      <button ion-fab (click)="zoom=0.50;fabZoom.close();">50%</button>\n\n      <button ion-fab (click)="zoom=0.25;fabZoom.close();">25%</button>\n\n    </ion-fab-list>\n\n    <ion-fab-list side="right">\n\n      <button ion-fab >{{data.cards.data?data.cards.data.length:\'n/a\'}}</button>\n\n    </ion-fab-list>\n\n  </ion-fab>\n\n  <ion-fab bottom center #fabSave *ngIf="data.anyChanges()" (click)="data.saveAll();fabMode.close()">\n\n    <button ion-fab large [color]="data.isBusy()?\'dark\':\'secondary\'"><ion-icon name="cloud"></ion-icon></button>\n\n  </ion-fab>\n\n\n\n  <div *ngIf="mode==Mode.PDCs" style="width:33%; height:100%; top:0; left:0; position:absolute; overflow:auto; margin:0; padding:0;">\n\n    <div style="max-height:100%; overflow:auto; margin:0; padding:0;">\n\n      <pdc-list #pdcList></pdc-list>\n\n    </div>\n\n  </div>\n\n\n\n  <div #lescroll id="lescroll" \n\n        [style.width]="mode==Mode.PDCs?\'67%\':\'100%\'"\n\n        [style.zoom]="zoom"\n\n        [class]="\'mode-\'+mode.name" \n\n        >\n\n\n\n    <div style.width="{{pageWidth}}px" style.height="{{pageHeight}}px" style="overflow:hidden;">\n\n      <div *ngFor="let cv of cardViews" \n\n            (click)="onClick(cv)"\n\n            (dblclick)="onDoubleClick(cv)"\n\n            (auxclick)="onAuxClick(cv,$event)"\n\n            style.width="{{cardWidth}}px"\n\n            style.height="{{cardHeight}}px"\n\n            style.left="{{getX(cv.index)}}px"\n\n            style.top="{{getY(cv.index)}}px"\n\n            [style.display]="getSupposedCardID(cv)==0?\'none\':\'block\'"\n\n            [class.selected]="isSelected(cv)"\n\n            class="lecard {{getColorClass(cv)}} {{hasData(cv)?\'non-empty\':\'empty\'}}">\n\n        <div *ngIf="hasData(cv) && mode != Mode.Quik">\n\n          <ion-badge class="id" *ngIf="mode.show.indexOf(\'id\')>=0" mode="ios" style="position:absolute; right:5px; top:-5px;" color="light">{{cv.model.ID}}</ion-badge>\n\n          <div class="slug" *ngIf="mode!=Mode.View" [style.opacity]="!showPrettyName||cv.model.hasName?1:.25">\n\n            <b>{{showPrettyName?cv.model.prettyName:cv.model.properties.slug}}</b></div>\n\n          <div class="slug" *ngIf="mode==Mode.View" [style.opacity]="cv.model.PDC?1:.25">{{cv.model.prettyName}}</div>\n\n          <div class="description">\n\n            <div *ngIf="cv.model.properties.tags.length>0" class="tags">{{cv.model.properties.tags.join(\' \')}}</div>\n\n            <div>{{cv.model.prettyDescription}}</div>\n\n          </div>\n\n          <div class="power"      *ngIf="!cv.model.isTrap">{{cv.model.prettyPower}}</div>\n\n          <div class="priority"   *ngIf="mode.show.indexOf(\'priority\')>=0">{{getPriority(cv)}}</div>\n\n          <div class="rarity"     *ngIf="mode.show.indexOf(\'rarity\')>=0">{{getRarity(cv)}}</div>\n\n          <div class="dev-status" *ngIf="mode.show.indexOf(\'status\')>=0" [style.background]="cv.model.prettyStatusColor">{{cv.model.prettyStatus}}</div>\n\n          <div class="name" *ngIf="mode==Mode.PDCs&&cv.model.PDC">{{cv.model.PDC.name}}</div>\n\n        </div>\n\n        <div *ngIf="hasData(cv) && mode == Mode.Quik">\n\n          <ion-input type="text" [(ngModel)]="cv.model.properties.slug" class="slug" (change)="onQuickChangeSlug(cv)"></ion-input>\n\n          <textarea type="text"  [(ngModel)]="cv.model.properties.description" class="description" (change)="onQuickChangeDescription(cv)"></textarea>\n\n          <div class="power"      *ngIf="!cv.model.isTrap">{{cv.model.prettyPower}}</div>\n\n          <div class="dev-status" *ngIf="mode.show.indexOf(\'status\')>=0" \n\n              (click)="onClickStatus(cv)"\n\n              [style.background]="cv.model.prettyStatusColor">{{cv.model.prettyStatus}}</div>\n\n          <div class="name" *ngIf="mode==Mode.PDCs&&cv.model.PDC">{{cv.model.PDC.name}}</div>\n\n        </div>\n\n        <div *ngIf="cv.model&&cv.model.properties.status==12" \n\n              style="width:100%;height:100%;background:black;opacity:.35;position:absolute;top:0;"></div>\n\n      </div>\n\n\n\n      <!-- <div style="width:100%" style.left="0px" style.top="10px"> Gaaliba </div> -->\n\n\n\n      <div *ngFor="let subsection of selectedBundle.config.subsections; let i = index" \n\n            class="subsection-header"\n\n            style.top="{{getY(i*16*4)}}px">\n\n          <span clear (click)="cycleBundlePropsFunction(i,-1)"> ⏪</span>\n\n          <span clear (click)="cycleBundlePropsFunction(i,1)"> ⏩ </span>\n\n          <ion-input [(ngModel)]="subsection.header" ></ion-input>\n\n      </div>\n\n    </div>\n\n  </div> \n\n\n\n</ion-content>\n\n\n\n'/*ion-inline-end:"C:\Projects Temp\ccgu-admin-tool\src\pages\list\list.html"*/,
+            selector: 'page-list',template:/*ion-inline-start:"C:\Projects Temp\ccgu-admin-tool\src\pages\list\list.html"*/'<ion-header>\n\n  <ion-navbar color="primary">\n\n\n\n    <!-- <button ion-button menuToggle end>\n\n      <ion-icon name="menu"></ion-icon>\n\n    </button> -->\n\n\n\n    <ion-grid grid-padding-width="1px">\n\n      <ion-row class="filters">\n\n        <ion-col no-padding *ngFor="let bundle of bundles">\n\n          <button \n\n            color="light"\n\n            class="page-button"\n\n            [class.selected]="bundle==selectedBundle" \n\n            (click)="selectBundle(bundle)"\n\n            ion-button [clear]="bundle!=selectedBundle"  full round>\n\n            {{ bundle.name }}\n\n          </button>\n\n        </ion-col>\n\n      </ion-row>\n\n    </ion-grid>\n\n\n\n  </ion-navbar>\n\n</ion-header>\n\n\n\n<ion-content no-scroll>\n\n\n\n  <ion-fab bottom right #fabMode>\n\n    <button ion-fab large><ion-icon [name]="mode.icon"></ion-icon></button>\n\n    <ion-fab-list side="left">\n\n      <button ion-fab (click)="setMode(Mode.Edit);fabMode.close()"><ion-icon name="{{Mode.Edit.icon}}"></ion-icon></button>\n\n      <button ion-fab (click)="setMode(Mode.Move);fabMode.close()"><ion-icon name="{{Mode.Move.icon}}"></ion-icon></button>\n\n      <button ion-fab (click)="setMode(Mode.PDCs);fabMode.close()"><ion-icon name="{{Mode.PDCs.icon}}"></ion-icon></button>\n\n      <button ion-fab (click)="setMode(Mode.Quik);fabMode.close()"><ion-icon name="{{Mode.Quik.icon}}"></ion-icon></button>\n\n      <button ion-fab (click)="setMode(Mode.View);fabMode.close()"><ion-icon name="{{Mode.View.icon}}"></ion-icon></button>\n\n    </ion-fab-list>\n\n    <ion-fab-list side="top">\n\n      <button ion-fab (click)="showPrettyName=!showPrettyName;fabMode.close()"><ion-icon name="glasses"></ion-icon></button>\n\n      <button ion-fab (click)="data.saveAll();fabMode.close()"><ion-icon name="cloud-upload"></ion-icon></button>\n\n      <button ion-fab (click)="data.loadAll();fabMode.close()"><ion-icon name="cloud-download"></ion-icon></button>\n\n    </ion-fab-list>\n\n  </ion-fab>\n\n  <ion-fab bottom left #fabZoom>\n\n    <button ion-fab large><ion-icon name="search"></ion-icon></button>\n\n    <ion-fab-list side="top">\n\n      <button ion-fab (click)="zoom=1.00;fabZoom.close();">100%</button>\n\n      <button ion-fab (click)="zoom=0.75;fabZoom.close();">75%</button>\n\n      <button ion-fab (click)="zoom=0.50;fabZoom.close();">50%</button>\n\n      <button ion-fab (click)="zoom=0.25;fabZoom.close();">25%</button>\n\n    </ion-fab-list>\n\n    <ion-fab-list side="right">\n\n      <button ion-fab >{{data.cards.data?data.cards.data.length:\'n/a\'}}</button>\n\n    </ion-fab-list>\n\n  </ion-fab>\n\n  <ion-fab bottom center #fabSave *ngIf="data.anyChanges()" (click)="data.saveAll();fabMode.close()">\n\n    <button ion-fab large [color]="data.isBusy()?\'dark\':\'secondary\'"><ion-icon name="cloud"></ion-icon></button>\n\n  </ion-fab>\n\n\n\n  <div *ngIf="mode==Mode.PDCs" style="width:33%; height:100%; top:0; left:0; position:absolute; overflow:auto; margin:0; padding:0;">\n\n    <div style="max-height:100%; overflow:auto; margin:0; padding:0;">\n\n      <pdc-list #pdcList></pdc-list>\n\n    </div>\n\n  </div>\n\n\n\n  <div #lescroll id="lescroll" \n\n        [style.width]="mode==Mode.PDCs?\'67%\':\'100%\'"\n\n        [style.zoom]="zoom"\n\n        [class]="\'mode-\'+mode.name" \n\n        >\n\n\n\n    <div style.width="{{pageWidth}}px" style.height="{{pageHeight}}px" style="overflow:hidden;">\n\n      <div *ngFor="let cv of cardViews" \n\n            (click)="onClick(cv)"\n\n            (dblclick)="onDoubleClick(cv)"\n\n            (auxclick)="onAuxClick(cv,$event)"\n\n            style.width="{{cardWidth}}px"\n\n            style.height="{{cardHeight}}px"\n\n            style.left="{{getX(cv.index)}}px"\n\n            style.top="{{getY(cv.index)}}px"\n\n            [style.display]="getSupposedCardID(cv)==0?\'none\':\'block\'"\n\n            [class.selected]="isSelected(cv)"\n\n            class="lecard {{getColorClass(cv)}} {{hasData(cv)?\'non-empty\':\'empty\'}}">\n\n        <div *ngIf="hasData(cv) && mode != Mode.Quik">\n\n          <ion-badge class="id" *ngIf="mode.show.indexOf(\'id\')>=0" mode="ios" style="position:absolute; right:5px; top:-5px;" color="light">{{cv.model.ID}}</ion-badge>\n\n          <div class="slug" *ngIf="mode!=Mode.View" [style.opacity]="!showPrettyName||cv.model.hasName?1:.25">\n\n            <b>{{showPrettyName?cv.model.prettyName:cv.model.properties.slug}}</b></div>\n\n          <div class="slug" *ngIf="mode==Mode.View" [style.opacity]="cv.model.hasName?1:.25">{{cv.model.prettyName}}</div>\n\n          <div class="description">\n\n            <div *ngIf="cv.model.properties.tags.length>0" class="tags">{{cv.model.properties.tags.join(\' \')}}</div>\n\n            <div>{{cv.model.prettyDescription}}</div>\n\n          </div>\n\n          <div class="power"      *ngIf="!cv.model.isTrap">{{cv.model.prettyPower}}</div>\n\n          <div class="priority"   *ngIf="mode.show.indexOf(\'priority\')>=0">{{getPriority(cv)}}</div>\n\n          <div class="rarity"     *ngIf="mode.show.indexOf(\'rarity\')>=0">{{getRarity(cv)}}</div>\n\n          <div class="dev-status" *ngIf="mode.show.indexOf(\'status\')>=0" [style.background]="cv.model.prettyStatusColor">{{cv.model.prettyStatus}}</div>\n\n          <div class="name" *ngIf="mode==Mode.PDCs&&getPDC(cv)">{{getPDC(cv).name}}</div>\n\n        </div>\n\n        <div *ngIf="hasData(cv) && mode == Mode.Quik">\n\n          <ion-input type="text" [(ngModel)]="cv.model.properties.slug" class="slug" (change)="onQuickChangeSlug(cv)"></ion-input>\n\n          <textarea type="text"  [(ngModel)]="cv.model.properties.description" class="description" (change)="onQuickChangeDescription(cv)"></textarea>\n\n          <div class="power"      *ngIf="!cv.model.isTrap">{{cv.model.prettyPower}}</div>\n\n          <div class="dev-status" *ngIf="mode.show.indexOf(\'status\')>=0" \n\n              (click)="onClickStatus(cv)"\n\n              [style.background]="cv.model.prettyStatusColor">{{cv.model.prettyStatus}}</div>\n\n          <div class="name" *ngIf="mode==Mode.PDCs&&getPDC(cv)">{{getPDC(cv).name}}</div>\n\n        </div>\n\n        <div *ngIf="cv.model&&cv.model.properties.status==12" \n\n              style="width:100%;height:100%;background:black;opacity:.35;position:absolute;top:0;"></div>\n\n      </div>\n\n\n\n      <!-- <div style="width:100%" style.left="0px" style.top="10px"> Gaaliba </div> -->\n\n\n\n      <div *ngFor="let subsection of selectedBundle.config.subsections; let i = index" \n\n            class="subsection-header"\n\n            style.top="{{getY(i*16*4)}}px">\n\n        <ion-item>\n\n          <button mini clear item-start (click)="cycleBundlePropsFunction(i,-1)">◀</button>\n\n          <button mini clear item-start (click)="cycleBundlePropsFunction(i,1)">▶</button>\n\n          <ion-input [(ngModel)]="subsection.header" ></ion-input>\n\n        </ion-item>\n\n      </div>\n\n    </div>\n\n  </div> \n\n\n\n</ion-content>\n\n\n\n'/*ion-inline-end:"C:\Projects Temp\ccgu-admin-tool\src\pages\list\list.html"*/,
             providers: [__WEBPACK_IMPORTED_MODULE_2__providers_data_data__["a" /* DataProvider */]]
         }),
         __metadata("design:paramtypes", [__WEBPACK_IMPORTED_MODULE_4_ionic_angular__["f" /* ModalController */], __WEBPACK_IMPORTED_MODULE_2__providers_data_data__["a" /* DataProvider */]])
@@ -752,8 +801,8 @@ var DP = (function () {
     }
     DP.TRAP = { type: __WEBPACK_IMPORTED_MODULE_1__app_models__["b" /* CardType */].Trap };
     DP.NRML = { type: __WEBPACK_IMPORTED_MODULE_1__app_models__["b" /* CardType */].Unit };
-    DP.SNEK = { type: __WEBPACK_IMPORTED_MODULE_1__app_models__["b" /* CardType */].Unit, description: "#sneak\n" };
-    DP.GRND = { type: __WEBPACK_IMPORTED_MODULE_1__app_models__["b" /* CardType */].Unit, description: "#grand\n" };
+    DP.SNEK = { type: __WEBPACK_IMPORTED_MODULE_1__app_models__["b" /* CardType */].Unit, tags: ["sneak"] };
+    DP.GRND = { type: __WEBPACK_IMPORTED_MODULE_1__app_models__["b" /* CardType */].Unit, tags: ["grand"] };
     return DP;
 }());
 //# sourceMappingURL=list.js.map
@@ -782,24 +831,45 @@ var PdcListComponent = (function () {
     function PdcListComponent(data) {
         this.data = data;
         this.selectedPDCs = [];
+        this.expandedPDCs = [];
     }
     Object.defineProperty(PdcListComponent.prototype, "chars", {
         get: function () { return this.data.pdc.data; },
         enumerable: true,
         configurable: true
     });
-    PdcListComponent.prototype.onSelect = function (pdc) {
-        if (this.selectedPDCs.indexOf(pdc) < 0) {
+    PdcListComponent.prototype.expand = function (pdc) {
+        if (pdc == null) {
+            this.expandedPDCs.length = 0;
+        }
+        else if (this.expandedPDCs.indexOf(pdc) < 0) {
+            this.expandedPDCs.length = 0;
+            this.expandedPDCs.push(pdc);
+        }
+        else {
+            this.expandedPDCs.length = 0;
+        }
+    };
+    PdcListComponent.prototype.select = function (pdc) {
+        if (pdc == null) {
+            this.selectedPDCs.length = 0;
+        }
+        else if (this.selectedPDCs.indexOf(pdc) < 0) {
             this.selectedPDCs.length = 0;
             this.selectedPDCs.push(pdc);
         }
-        else {
-            this.selectedPDCs.length = 0;
-        }
+        // else
+        // {
+        //   this.selectedPDCs.length = 0;
+        // }
     };
+    PdcListComponent.prototype.isSelected = function (pdc) { return this.selectedPDCs.indexOf(pdc) > -1; };
+    PdcListComponent.prototype.isExpanded = function (pdc) { return this.expandedPDCs.indexOf(pdc) > -1; };
+    PdcListComponent.prototype.hasStuff = function (pdc) { return (Boolean)(pdc.notes_cardstats || pdc.notes_character); };
+    PdcListComponent.prototype.stop = function (event) { event.stopPropagation(); };
     PdcListComponent = __decorate([
         Object(__WEBPACK_IMPORTED_MODULE_0__angular_core__["m" /* Component */])({
-            selector: 'pdc-list',template:/*ion-inline-start:"C:\Projects Temp\ccgu-admin-tool\src\components\pdc-list\pdc-list.html"*/'<div style="background:white; overflow:hidden;" #pdcWrapper>\n  <ion-list>\n    <ion-item-group>\n      <!-- <ion-item-divider color="light">Public Domain Characters</ion-item-divider> -->\n      <ion-item *ngFor="let pdc of chars" (click)="onSelect(pdc)" [class.selected]="selectedPDCs.indexOf(pdc)>-1">{{pdc.origin}}/<b>{{pdc.name}}</b></ion-item>\n    </ion-item-group>\n  </ion-list>\n</div>\n'/*ion-inline-end:"C:\Projects Temp\ccgu-admin-tool\src\components\pdc-list\pdc-list.html"*/
+            selector: 'pdc-list',template:/*ion-inline-start:"C:\Projects Temp\ccgu-admin-tool\src\components\pdc-list\pdc-list.html"*/'<div style="background:white; overflow:hidden;" #pdcWrapper>\n  <ion-list>\n    <ion-item-group>\n      <!-- <ion-item-divider color="light">Public Domain Characters</ion-item-divider> -->\n      <!-- <div class="pdc-list-item" *ngFor="let pdc of chars; let i = index"> -->\n      <div class="pdc-list-item" *ngFor="let pdc of chars; let i = index" (click)="select(pdc)">\n        <ion-item [class.gray]="data.anyCardHasPDC(pdc)" [class.selected]="isSelected(pdc)" text-wrap>\n          <ion-icon name="arrow-up" (click)="data.createPDC(pdc.origin,i); stop($event)" color="faded" item-start></ion-icon>\n          <ion-icon name="arrow-down" (click)="data.createPDC(pdc.origin,i+1); stop($event)" color="faded" item-start></ion-icon>\n          <ion-input type="text"[(ngModel)]="pdc.origin" class="origin"></ion-input>\n          <ion-input type="text"[(ngModel)]="pdc.name" class="name"></ion-input>\n          <!-- <ion-icon name="arrow-forward" (click)="select(pdc)" color="faded" item-end></ion-icon> -->\n          <ion-icon *ngIf="!isExpanded(pdc)&&hasStuff(pdc)" name="radio-button-on" (click)="expand(pdc);" color="faded" item-end></ion-icon>\n          <ion-icon *ngIf="!isExpanded(pdc)&&!hasStuff(pdc)" name="radio-button-off" (click)="expand(pdc);" color="faded" item-end></ion-icon>\n          <ion-icon *ngIf="isExpanded(pdc)" name="close" (click)="expand(pdc); stop($event)" color="faded" item-end></ion-icon>\n        </ion-item>\n\n        <div *ngIf="isExpanded(pdc)">\n          <ion-textarea placeholder="notes (character)" [(ngModel)]="pdc.notes_character"></ion-textarea>\n          <ion-textarea placeholder="notes (card stats)" [(ngModel)]="pdc.notes_cardstats"></ion-textarea>\n          <ion-textarea placeholder="faction etc." [(ngModel)]="pdc.faction"></ion-textarea>\n          <p class="guid">{{pdc.guid}}</p>\n        </div>\n      </div>\n    </ion-item-group>\n  </ion-list>\n</div>\n'/*ion-inline-end:"C:\Projects Temp\ccgu-admin-tool\src\components\pdc-list\pdc-list.html"*/
         }),
         __metadata("design:paramtypes", [__WEBPACK_IMPORTED_MODULE_1__providers_data_data__["a" /* DataProvider */]])
     ], PdcListComponent);
@@ -1091,7 +1161,7 @@ var CardViewPage = (function () {
     };
     CardViewPage = __decorate([
         Object(__WEBPACK_IMPORTED_MODULE_0__angular_core__["m" /* Component */])({
-            selector: 'page-card-view',template:/*ion-inline-start:"C:\Projects Temp\ccgu-admin-tool\src\pages\card-view\card-view.html"*/'<ion-content padding [class]="getColorClass()+\' pad\'">\n\n\n\n  <ion-input type="text" class="slug" [(ngModel)]="card.properties.slug"></ion-input>\n\n\n\n  <ion-grid no-padding #hidablePower class="power-options hidable" [class.hidden]="true">\n\n    <ion-row>\n\n      <ion-col col-2><button ion-button clear large full (click)="toggle(hidablePower);card.isTrap=true" >Trap</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 1);toggle(hidablePower)"> 1</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 2);toggle(hidablePower)"> 2</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 3);toggle(hidablePower)"> 3</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 4);toggle(hidablePower)"> 4</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 5);toggle(hidablePower)"> 5</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 6);toggle(hidablePower)"> 6</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 7);toggle(hidablePower)"> 7</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 8);toggle(hidablePower)"> 8</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 9);toggle(hidablePower)"> 9</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(10);toggle(hidablePower)">10</button></ion-col>\n\n    </ion-row>\n\n    <ion-row>\n\n      <ion-col col-2><button ion-button clear large full (click)="setPower( 0);toggle(hidablePower)"> 0</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(11);toggle(hidablePower)">11</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(12);toggle(hidablePower)">12</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(13);toggle(hidablePower)">13</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(14);toggle(hidablePower)">14</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(15);toggle(hidablePower)">15</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(16);toggle(hidablePower)">16</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(17);toggle(hidablePower)">17</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(18);toggle(hidablePower)">18</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(19);toggle(hidablePower)">19</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(20);toggle(hidablePower)">20</button></ion-col>\n\n    </ion-row>\n\n  </ion-grid>\n\n\n\n  <ion-input type="text" class="name" [(ngModel)]="card.properties.name"></ion-input>\n\n    \n\n  <ion-textarea [(ngModel)]="card.properties.description"></ion-textarea>\n\n\n\n  <ion-grid no-padding grid-padding-width="1px" class="tags">\n\n      <ion-row>\n\n        <ion-col no-padding *ngFor="let tag of tags">\n\n          <button ion-button mini class="tag-button" \n\n                  [outline]="card.properties.tags.indexOf(tag)<0"\n\n                  (click)="card.toggleTag(tag)">{{tag}}</button>\n\n        </ion-col>\n\n      </ion-row>\n\n  </ion-grid>\n\n\n\n  <div ion-item full #buttonStatus\n\n          color="devstatus-{{card.properties.status}}"\n\n          class="status-button status-label hidable" \n\n          [class.hidden]="false" \n\n          (click)="toggle(hidableStatus)"\n\n          style="text-align:center;color:black;"\n\n           >{{getPrettyStatus(card.properties.status)}}</div>\n\n  \n\n  <ion-grid no-padding #hidableStatus class="status-options hidable" [class.hidden]="true">\n\n    <ion-row>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-0" (click)="setStatus(0);toggle(hidableStatus);" >{{getPrettyStatus(0)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-1" (click)="setStatus(1);toggle(hidableStatus);" >{{getPrettyStatus(1)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-2" (click)="setStatus(2);toggle(hidableStatus);" >{{getPrettyStatus(2)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-3" (click)="setStatus(3);toggle(hidableStatus);" >{{getPrettyStatus(3)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-4" (click)="setStatus(4);toggle(hidableStatus);" >{{getPrettyStatus(4)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-5" (click)="setStatus(5);toggle(hidableStatus);" >{{getPrettyStatus(5)}}</div></ion-col>\n\n    </ion-row>\n\n    <ion-row>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-6"  (click)="setStatus(6);toggle(hidableStatus);" >{{getPrettyStatus(6)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-7"  (click)="setStatus(7);toggle(hidableStatus);" >{{getPrettyStatus(7)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-8"  (click)="setStatus(8);toggle(hidableStatus);" >{{getPrettyStatus(8)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-9"  (click)="setStatus(9);toggle(hidableStatus);" >{{getPrettyStatus(9)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-10" (click)="setStatus(10);toggle(hidableStatus);">{{getPrettyStatus(10)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-11" (click)="setStatus(11);toggle(hidableStatus);">{{getPrettyStatus(11)}}</div></ion-col>\n\n    </ion-row>\n\n  </ion-grid>\n\n    \n\n  <ion-grid no-padding #hidablePriority class="priority-options hidable" [class.hidden]="false">\n\n    <ion-row>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 0 > card.properties.priority" (click)="setPriority(0);" >➖</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 1 > card.properties.priority" (click)="setPriority(1);" >🖤</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 2 > card.properties.priority" (click)="setPriority(2);" >🖤</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 3 > card.properties.priority" (click)="setPriority(3);" >💚</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 4 > card.properties.priority" (click)="setPriority(4);" >💚</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 5 > card.properties.priority" (click)="setPriority(5);" >💙</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 6 > card.properties.priority" (click)="setPriority(6);" >💙</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 7 > card.properties.priority" (click)="setPriority(7);" >💜</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 8 > card.properties.priority" (click)="setPriority(8);" >💜</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 9 > card.properties.priority" (click)="setPriority(9);" >🧡</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]="10 > card.properties.priority" (click)="setPriority(10);">🧡</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPriority(-1);">✖</button></ion-col>\n\n    </ion-row>\n\n  </ion-grid>\n\n\n\n  <ion-grid no-padding #hidableRarity class="rarity-options hidable" [class.hidden]="false">\n\n    <ion-row>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 0 > card.properties.rarity" (click)="setRarity(0);" >➖</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 1 > card.properties.rarity" (click)="setRarity(1);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 2 > card.properties.rarity" (click)="setRarity(2);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 3 > card.properties.rarity" (click)="setRarity(3);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 4 > card.properties.rarity" (click)="setRarity(4);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 5 > card.properties.rarity" (click)="setRarity(5);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 6 > card.properties.rarity" (click)="setRarity(6);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 7 > card.properties.rarity" (click)="setRarity(7);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 8 > card.properties.rarity" (click)="setRarity(8);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 9 > card.properties.rarity" (click)="setRarity(9);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]="10 > card.properties.rarity" (click)="setRarity(10);">⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setRarity(-1);">✖</button></ion-col>\n\n    </ion-row>\n\n  </ion-grid>\n\n  \n\n\n\n  <ion-fab top left class="power-fab">\n\n    <button ion-fab large color="primary" (click)="hidablePower.classList.toggle(\'hidden\')"  color="light">\n\n        {{card.isTrap?"🤐":card.prettyPower}}\n\n    </button>\n\n  </ion-fab>\n\n\n\n  <ion-fab bottom right>\n\n    <button ion-fab large color="primary"><ion-icon name="more"></ion-icon></button>\n\n    <ion-fab-list side="left">\n\n        <button ion-fab large color="primary" (click)="delete()"><ion-icon name="trash"></ion-icon></button>\n\n    </ion-fab-list>\n\n  </ion-fab>\n\n  \n\n  <ion-fab top right>\n\n    <button ion-fab large color="primary" (click)="save()">\n\n      <ion-icon name="checkmark"></ion-icon>\n\n    </button>\n\n  </ion-fab>\n\n\n\n</ion-content>'/*ion-inline-end:"C:\Projects Temp\ccgu-admin-tool\src\pages\card-view\card-view.html"*/,
+            selector: 'page-card-view',template:/*ion-inline-start:"C:\Projects Temp\ccgu-admin-tool\src\pages\card-view\card-view.html"*/'<ion-content padding [class]="getColorClass()+\' pad\'">\n\n\n\n  <ion-input type="text" class="slug" [(ngModel)]="card.properties.slug"></ion-input>\n\n\n\n  <ion-grid no-padding #hidablePower class="power-options hidable" [class.hidden]="true">\n\n    <ion-row>\n\n      <ion-col col-2><button ion-button clear large full (click)="toggle(hidablePower);card.setIsTrapType(true)">Trap</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 1);toggle(hidablePower)"> 1</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 2);toggle(hidablePower)"> 2</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 3);toggle(hidablePower)"> 3</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 4);toggle(hidablePower)"> 4</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 5);toggle(hidablePower)"> 5</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 6);toggle(hidablePower)"> 6</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 7);toggle(hidablePower)"> 7</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 8);toggle(hidablePower)"> 8</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 9);toggle(hidablePower)"> 9</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(10);toggle(hidablePower)">10</button></ion-col>\n\n    </ion-row>\n\n    <ion-row>\n\n      <ion-col col-2><button ion-button clear large full (click)="setPower( 0);toggle(hidablePower)"> 0</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(11);toggle(hidablePower)">11</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(12);toggle(hidablePower)">12</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(13);toggle(hidablePower)">13</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(14);toggle(hidablePower)">14</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(15);toggle(hidablePower)">15</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(16);toggle(hidablePower)">16</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(17);toggle(hidablePower)">17</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(18);toggle(hidablePower)">18</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(19);toggle(hidablePower)">19</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(20);toggle(hidablePower)">20</button></ion-col>\n\n    </ion-row>\n\n  </ion-grid>\n\n\n\n  <ion-input type="text" class="name" [(ngModel)]="card.properties.name"></ion-input>\n\n    \n\n  <ion-textarea [(ngModel)]="card.properties.description"></ion-textarea>\n\n\n\n  <ion-grid no-padding grid-padding-width="1px" class="tags">\n\n      <ion-row>\n\n        <ion-col no-padding *ngFor="let tag of tags">\n\n          <button ion-button mini class="tag-button" \n\n                  [outline]="card.properties.tags.indexOf(tag)<0"\n\n                  (click)="card.toggleTag(tag)">{{tag}}</button>\n\n        </ion-col>\n\n      </ion-row>\n\n  </ion-grid>\n\n\n\n  <div ion-item full #buttonStatus\n\n          color="devstatus-{{card.properties.status}}"\n\n          class="status-button status-label hidable" \n\n          [class.hidden]="false" \n\n          (click)="toggle(hidableStatus)"\n\n          style="text-align:center;color:black;"\n\n           >{{getPrettyStatus(card.properties.status)}}</div>\n\n  \n\n  <ion-grid no-padding #hidableStatus class="status-options hidable" [class.hidden]="true">\n\n    <ion-row>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-0" (click)="setStatus(0);toggle(hidableStatus);" >{{getPrettyStatus(0)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-1" (click)="setStatus(1);toggle(hidableStatus);" >{{getPrettyStatus(1)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-2" (click)="setStatus(2);toggle(hidableStatus);" >{{getPrettyStatus(2)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-3" (click)="setStatus(3);toggle(hidableStatus);" >{{getPrettyStatus(3)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-4" (click)="setStatus(4);toggle(hidableStatus);" >{{getPrettyStatus(4)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-5" (click)="setStatus(5);toggle(hidableStatus);" >{{getPrettyStatus(5)}}</div></ion-col>\n\n    </ion-row>\n\n    <ion-row>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-6"  (click)="setStatus(6);toggle(hidableStatus);" >{{getPrettyStatus(6)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-7"  (click)="setStatus(7);toggle(hidableStatus);" >{{getPrettyStatus(7)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-8"  (click)="setStatus(8);toggle(hidableStatus);" >{{getPrettyStatus(8)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-9"  (click)="setStatus(9);toggle(hidableStatus);" >{{getPrettyStatus(9)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-10" (click)="setStatus(10);toggle(hidableStatus);">{{getPrettyStatus(10)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-11" (click)="setStatus(11);toggle(hidableStatus);">{{getPrettyStatus(11)}}</div></ion-col>\n\n    </ion-row>\n\n  </ion-grid>\n\n    \n\n  <ion-grid no-padding #hidablePriority class="priority-options hidable" [class.hidden]="false">\n\n    <ion-row>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 0 > card.properties.priority" (click)="setPriority(0);" >➖</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 1 > card.properties.priority" (click)="setPriority(1);" >🖤</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 2 > card.properties.priority" (click)="setPriority(2);" >🖤</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 3 > card.properties.priority" (click)="setPriority(3);" >💚</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 4 > card.properties.priority" (click)="setPriority(4);" >💚</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 5 > card.properties.priority" (click)="setPriority(5);" >💙</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 6 > card.properties.priority" (click)="setPriority(6);" >💙</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 7 > card.properties.priority" (click)="setPriority(7);" >💜</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 8 > card.properties.priority" (click)="setPriority(8);" >💜</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 9 > card.properties.priority" (click)="setPriority(9);" >🧡</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]="10 > card.properties.priority" (click)="setPriority(10);">🧡</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPriority(-1);">✖</button></ion-col>\n\n    </ion-row>\n\n  </ion-grid>\n\n\n\n  <ion-grid no-padding #hidableRarity class="rarity-options hidable" [class.hidden]="false">\n\n    <ion-row>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 0 > card.properties.rarity" (click)="setRarity(0);" >➖</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 1 > card.properties.rarity" (click)="setRarity(1);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 2 > card.properties.rarity" (click)="setRarity(2);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 3 > card.properties.rarity" (click)="setRarity(3);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 4 > card.properties.rarity" (click)="setRarity(4);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 5 > card.properties.rarity" (click)="setRarity(5);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 6 > card.properties.rarity" (click)="setRarity(6);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 7 > card.properties.rarity" (click)="setRarity(7);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 8 > card.properties.rarity" (click)="setRarity(8);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 9 > card.properties.rarity" (click)="setRarity(9);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]="10 > card.properties.rarity" (click)="setRarity(10);">⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setRarity(-1);">✖</button></ion-col>\n\n    </ion-row>\n\n  </ion-grid>\n\n  \n\n\n\n  <ion-fab top left class="power-fab">\n\n    <button ion-fab large color="primary" (click)="hidablePower.classList.toggle(\'hidden\')"  color="light">\n\n        {{card.isTrap?"🤐":card.prettyPower}}\n\n    </button>\n\n  </ion-fab>\n\n\n\n  <ion-fab bottom right>\n\n    <button ion-fab large color="primary"><ion-icon name="more"></ion-icon></button>\n\n    <ion-fab-list side="left">\n\n        <button ion-fab large color="primary" (click)="delete()"><ion-icon name="trash"></ion-icon></button>\n\n    </ion-fab-list>\n\n  </ion-fab>\n\n  \n\n  <ion-fab top right>\n\n    <button ion-fab large color="primary" (click)="save()">\n\n      <ion-icon name="checkmark"></ion-icon>\n\n    </button>\n\n  </ion-fab>\n\n\n\n</ion-content>'/*ion-inline-end:"C:\Projects Temp\ccgu-admin-tool\src\pages\card-view\card-view.html"*/,
         }),
         __metadata("design:paramtypes", [__WEBPACK_IMPORTED_MODULE_1_ionic_angular__["h" /* NavController */], __WEBPACK_IMPORTED_MODULE_1_ionic_angular__["i" /* NavParams */]])
     ], CardViewPage);
@@ -1116,15 +1186,13 @@ var CardViewPage = (function () {
 var CardModel = (function () {
     function CardModel(data) {
         this.properties = new CardData();
-        this.pdc = null;
         this.properties = data;
     }
     CardModel.makeFromData = function (data) { return new CardModel(data); };
     CardModel.makeClean = function (id) { return new CardModel({ id: id, slug: "", type: CardType.Unit }); };
     CardModel.prototype.setID = function (value) { this.properties.id = value; };
     CardModel.prototype.setPDC = function (pdc) {
-        this.pdc = pdc;
-        this.properties.pdc = pdc ? pdc.id : -1;
+        this.properties.pdc = pdc ? pdc.guid : null;
         this.properties.name = pdc ? pdc.name : null;
     };
     CardModel.prototype.toggleTag = function (tag) {
@@ -1134,8 +1202,9 @@ var CardModel = (function () {
         else
             this.properties.tags.splice(i, 1);
     };
+    CardModel.prototype.setIsTrapType = function (value) { this.properties.type = value ? CardType.Trap : CardType.Unit; };
     Object.defineProperty(CardModel.prototype, "hasPDC", {
-        get: function () { return (Boolean)(this.pdc); },
+        get: function () { return (Boolean)(this.properties.pdc); },
         enumerable: true,
         configurable: true
     });
@@ -1149,13 +1218,8 @@ var CardModel = (function () {
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(CardModel.prototype, "PDC", {
-        get: function () { return this.pdc; },
-        enumerable: true,
-        configurable: true
-    });
     Object.defineProperty(CardModel.prototype, "prettyName", {
-        get: function () { return this.hasPDC ? this.pdc.name : this.hasName ? this.properties.name : this.properties.slug; },
+        get: function () { return this.hasName ? this.properties.name : this.properties.slug; },
         enumerable: true,
         configurable: true
     });
@@ -1247,7 +1311,7 @@ var CardData = (function () {
         this.tags = [];
         this.rarity = 0;
         this.c = '';
-        this.pdc = -1;
+        this.pdc = null;
         this.status = 0;
         this.priority = 0;
     }
@@ -1256,7 +1320,6 @@ var CardData = (function () {
 
 var PDCharacterData = (function () {
     function PDCharacterData() {
-        this.name = "";
     }
     return PDCharacterData;
 }());
