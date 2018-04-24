@@ -1,258 +1,5 @@
 webpackJsonp([1],{
 
-/***/ 102:
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return DataProvider; });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__angular_common_http__ = __webpack_require__(196);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__angular_core__ = __webpack_require__(0);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_ionic_angular__ = __webpack_require__(29);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__app_models__ = __webpack_require__(79);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4_rxjs_add_operator_map__ = __webpack_require__(283);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4_rxjs_add_operator_map___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_4_rxjs_add_operator_map__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5_rxjs_add_operator_timeout__ = __webpack_require__(284);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5_rxjs_add_operator_timeout___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_5_rxjs_add_operator_timeout__);
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
-
-
-
-
-
-
-var DataProvider = (function () {
-    function DataProvider(http, events, toast) {
-        var _this = this;
-        this.http = http;
-        this.events = events;
-        this.toast = toast;
-        this.FILE_CARDS = "card-models.json";
-        this.FILE_CONFIG = "editor-stuff.json";
-        this.FILE_PDC = "pdc.json";
-        this.cardsMap = new Map();
-        this.pdcMap = new Map();
-        this.config = new DataFile(this.FILE_CONFIG, http);
-        this.cards = new DataFile(this.FILE_CARDS, http);
-        this.pdc = new DataFile(this.FILE_PDC, http);
-        this.config.data = new ConfigurationData();
-        this.datafiles = [this.config, this.cards, this.pdc];
-        this.loadAll();
-        setInterval(function () { return _this.checkForChanges(); }, 1000);
-    }
-    DataProvider.prototype.isBusy = function () { return this.saving || !this.datafiles.every(function (v, i, a) { return !v.busy; }); };
-    DataProvider.prototype.anyChanges = function () { return !this.datafiles.every(function (v, i, a) { return !v.dataHasChanged; }); };
-    DataProvider.prototype.checkForChanges = function () { this.datafiles.forEach(function (v) { v.checkForChanges(); }); };
-    DataProvider.prototype.createCard = function (id) {
-        var card = __WEBPACK_IMPORTED_MODULE_3__app_models__["a" /* CardModel */].makeClean(id);
-        card.properties.power = 0;
-        card.properties.priority = 0;
-        card.properties.rarity = 0;
-        card.properties.status = 0;
-        card.properties.type = __WEBPACK_IMPORTED_MODULE_3__app_models__["b" /* CardType */].Unit;
-        card.properties.slug = "";
-        card.properties.name = "";
-        card.properties.description = "";
-        card.properties.tags = [];
-        this.cardsMap[id] = card;
-        this.cards.data.unshift(card.properties);
-        this.cards.dataHasChanged = true;
-        return card;
-    };
-    DataProvider.prototype.createPDC = function (origin, at) {
-        var pdc = {
-            origin: origin,
-            name: "",
-            notes_character: "",
-            notes_cardstats: "",
-            tags: [],
-            faction: "",
-            guid: GUID.make()
-        };
-        this.pdc.data.splice(at, 0, pdc);
-        return pdc;
-    };
-    DataProvider.prototype.deleteCard = function (id) {
-        delete this.cardsMap[id];
-        for (var i = this.cards.data.length - 1; i >= 0; i--)
-            if (this.cards.data[i].id == id)
-                this.cards.data.splice(i, 1);
-        this.cards.dataHasChanged = true;
-    };
-    DataProvider.prototype.getCardSectionData = function (index) { return this.config.data.cardSections[index % this.config.data.cardSections.length]; };
-    DataProvider.prototype.anyCardHasPDC = function (pdc) {
-        if (!this.cards.data)
-            return false;
-        for (var i = 0; i < this.cards.data.length; i++)
-            if (this.cards.data[i].pdc == pdc.guid)
-                return true;
-        return false;
-    };
-    ///
-    DataProvider.prototype.loadAll = function () {
-        var _this = this;
-        console.log("loading data from github gist");
-        this.config.load(function (data) { return _this.onLoaded_Configuration(data); });
-        this.cards.load(function (data) { return _this.onLoaded_Cards(data); });
-        this.pdc.load(function (data) { return _this.onLoaded_PDCharacters(data); });
-    };
-    DataProvider.prototype.onLoaded_Configuration = function (data) {
-        this.events.publish("data:reload");
-    };
-    DataProvider.prototype.onLoaded_Cards = function (data) {
-        // for ( let i = data.length - 1; i >= 0; i-- )
-        // {
-        //   for ( let j = data.length - 1; j > i; j-- )
-        //   {
-        //     let a = data[i], b = data[j];
-        //     if ( a.slug == b.slug && a.description == b.description )
-        //     {
-        //       console.log( "duplicate cards: " + a.id + " = " + b.id + " " + a.slug );
-        //       this.cards.data.splice( a.id > b.id ? i : j, 1 );
-        //     }
-        //   }
-        // }
-        // for ( let i = data.length - 1; i >= 0; i-- )
-        // {
-        //   for ( let j = data.length - 1; j > i; j-- )
-        //   {
-        //     let a = data[i], b = data[j];
-        //     if ( a.id == b.id )
-        //     {
-        //       console.log( "id collision: " + a.slug + " vs " + b.slug );
-        //       a.id += 256;
-        //     }
-        //   }
-        // }
-        // this.cardsMap.clear();
-        this.cardsMap = new Map();
-        for (var i = 0; i < data.length; i++)
-            this.cardsMap[data[i].id] = __WEBPACK_IMPORTED_MODULE_3__app_models__["a" /* CardModel */].makeFromData(data[i]);
-        this.events.publish("data:reload");
-    };
-    DataProvider.prototype.onLoaded_PDCharacters = function (data) {
-        for (var i = data.length - 1; i >= 0; i--)
-            this.pdcMap[data[i].guid] = data[i];
-        this.events.publish("data:reload");
-    };
-    DataProvider.prototype.sortPDCs = function () {
-        this.pdc.data.sort(sortFunction);
-        function sortFunction(aa, bb) {
-            var a = aa.origin.toUpperCase();
-            var b = bb.origin.toUpperCase();
-            return a < b ? -1 : a > b ? 1 : 0;
-        }
-    };
-    DataProvider.prototype.saveAll = function () {
-        var _this = this;
-        this.sortPDCs();
-        var token = "6dae67b6" + "f3085406" + "f57a9412";
-        token += "c1d8d6ef";
-        token += "5d888863";
-        var url = "https://api.github.com/gists/4c390b3e5502811d196233104c89f755";
-        var headers = new __WEBPACK_IMPORTED_MODULE_0__angular_common_http__["c" /* HttpHeaders */]().set("Authorization", "token  " + token);
-        var files = {};
-        this.datafiles.forEach(function (datafile) {
-            if (datafile.dataHasChanged)
-                files[datafile.filename] = { content: JSON.stringify(datafile.data, null, 2) };
-        });
-        this.saving = true;
-        this.http.post(url, { files: files }, { headers: headers })
-            .subscribe(function (data) {
-            console.log("saved", data);
-            _this.saving = false;
-            _this.datafiles.forEach(function (datafile) { return datafile.updateOriginalState(); });
-            _this.showToast("Data Saved");
-        });
-    };
-    DataProvider.prototype.showToast = function (msg) {
-        this.toast.create({ message: msg, duration: 1500 }).present();
-    };
-    DataProvider = __decorate([
-        Object(__WEBPACK_IMPORTED_MODULE_1__angular_core__["A" /* Injectable */])(),
-        __metadata("design:paramtypes", [__WEBPACK_IMPORTED_MODULE_0__angular_common_http__["a" /* HttpClient */], __WEBPACK_IMPORTED_MODULE_2_ionic_angular__["a" /* Events */], __WEBPACK_IMPORTED_MODULE_2_ionic_angular__["k" /* ToastController */]])
-    ], DataProvider);
-    return DataProvider;
-}());
-
-var DataFile = (function () {
-    function DataFile(filename, http) {
-        this.filename = filename;
-        this.http = http;
-        this.URL_FILE = "https://gist.githubusercontent.com/choephix/4c390b3e5502811d196233104c89f755/raw/";
-    }
-    DataFile.prototype.load = function (callbackLoaded) {
-        var _this = this;
-        console.log("loading " + this.filename);
-        var headers = new __WEBPACK_IMPORTED_MODULE_0__angular_common_http__["c" /* HttpHeaders */]();
-        headers.set("content-type", "application/json");
-        headers.set('cache-control', 'no-cache');
-        // headers.set( 'x-apikey', '5acb82b08f64a5337173a18a' );
-        this.busy = true;
-        var url_cards = this.URL_FILE + this.filename + this.cacheBustSuffix();
-        this.http.get(url_cards, { headers: headers }).subscribe(function (data) {
-            console.log("loaded " + _this.filename, data);
-            _this.busy = false;
-            _this.data = data;
-            _this.updateOriginalState();
-            callbackLoaded(_this.data);
-        });
-    };
-    DataFile.prototype.updateOriginalState = function () {
-        this.dataOriginalJson = JSON.stringify(this.data);
-        this.dataHasChanged = false;
-    };
-    DataFile.prototype.checkForChanges = function () {
-        this.dataHasChanged = this.dataOriginalJson != JSON.stringify(this.data);
-    };
-    DataFile.prototype.cacheBustSuffix = function () { return '?' + (new Date().valueOf() % 1000000); };
-    return DataFile;
-}());
-var ConfigurationData = (function () {
-    function ConfigurationData() {
-        this.cardSections = [
-            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
-            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
-            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
-            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
-            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
-            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
-            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
-            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
-            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
-            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
-            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
-            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
-            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
-            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
-            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
-            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
-        ];
-    }
-    return ConfigurationData;
-}());
-var GUID = (function () {
-    function GUID() {
-    }
-    GUID.make = function () {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
-    };
-    return GUID;
-}());
-//# sourceMappingURL=data.js.map
-
-/***/ }),
-
 /***/ 115:
 /***/ (function(module, exports) {
 
@@ -275,7 +22,7 @@ webpackEmptyAsyncContext.id = 115;
 
 var map = {
 	"../pages/card-view/card-view.module": [
-		294,
+		296,
 		0
 	]
 };
@@ -303,7 +50,7 @@ module.exports = webpackAsyncContext;
 /* unused harmony export CardFilter */
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__angular_core__ = __webpack_require__(0);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_ionic_angular__ = __webpack_require__(29);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__card_view_card_view__ = __webpack_require__(50);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__card_view_card_view__ = __webpack_require__(51);
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -395,11 +142,12 @@ var CardFilter = (function () {
 /* unused harmony export CardView */
 /* unused harmony export CardViewBundle */
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__angular_core__ = __webpack_require__(0);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__app_models__ = __webpack_require__(79);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__providers_data_data__ = __webpack_require__(102);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__card_view_card_view__ = __webpack_require__(50);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__app_models__ = __webpack_require__(80);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__providers_data_data__ = __webpack_require__(50);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__card_view_card_view__ = __webpack_require__(51);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_4_ionic_angular__ = __webpack_require__(29);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__components_pdc_list_pdc_list__ = __webpack_require__(204);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__components_deck_list_deck_list__ = __webpack_require__(205);
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -409,6 +157,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+
 
 
 
@@ -427,11 +176,11 @@ var ListPage = (function () {
         this.modalCtrl = modalCtrl;
         this.data = data;
         this.Mode = {
-            Edit: { icon: "create", name: "edit", show: ["priority", "status"] },
-            Move: { icon: "resize", name: "move", show: ["priority", "status", "id"] },
-            PDCs: { icon: "person", name: "pdcs", show: ["status"] },
-            Quik: { icon: "flash", name: "quik", show: ["priority", "status"] },
             View: { icon: "eye", name: "view", show: ["rarity"] },
+            Edit: { icon: "create", name: "edit", show: ["priority", "status"] },
+            Quik: { icon: "flash", name: "quik", show: ["priority", "status"] },
+            PDCs: { icon: "person", name: "pdcs", show: ["status"] },
+            Deck: { icon: "albums", name: "deck", show: ["priority", "status"] },
         };
         this.subheaderHeight = 24;
         this.minCardWidth = 157;
@@ -443,9 +192,10 @@ var ListPage = (function () {
         this.selectedBundle = null;
         this.bundles = [];
         this.zoom = 1.0;
-        this.mode = this.Mode.PDCs;
+        this.mode = this.Mode.Edit;
         this.selectedCardIDs = [];
         this.showPrettyName = false;
+        this.showID = false;
         this.cardWidth = this.minCardWidth;
         this.cardHeight = this.minCardHeight;
         this.cardXFactor = this.cardWidth + this.cardMargin;
@@ -453,15 +203,24 @@ var ListPage = (function () {
         this.initializeBundles();
         for (var i = 0; i < ListPage_1.PAGE_CARDS_COUNT; i++)
             this.cardViews.push({ index: i, model: null });
-        var bundleIndex = parseInt(localStorage.getItem("bundle-index"));
-        if (isNaN(bundleIndex) || bundleIndex >= this.bundles.length)
-            bundleIndex = 1;
-        this.selectBundle(this.bundles[bundleIndex]);
-        this.refresh();
+        /// INIT FROM LOCAL
+        {
+            var bundleIndex = parseInt(localStorage.getItem("bundle-index"));
+            if (isNaN(bundleIndex) || bundleIndex >= this.bundles.length)
+                bundleIndex = 1;
+            this.selectBundle(this.bundles[bundleIndex]);
+            var mode = localStorage.getItem("mode");
+            for (var key in this.Mode)
+                if (this.Mode[key])
+                    if (this.Mode[key].name == mode)
+                        this.setMode(this.Mode[key]);
+            this.refresh();
+        }
         document.body.addEventListener("keydown", function (e) { return _this.onKey(e); });
         document.body.addEventListener("contextmenu", function (e) { if (!e.altKey)
             e.preventDefault(); });
-        data.events.subscribe("data:reload", function (s) { return _this.refresh(); });
+        this.data.events.subscribe("list:resetmode", function () { return _this.setMode(_this.Mode.Edit); });
+        this.data.events.subscribe("data:reload", function (s) { return _this.refresh(); });
     }
     ListPage_1 = ListPage;
     Object.defineProperty(ListPage.prototype, "pageWidth", {
@@ -479,6 +238,8 @@ var ListPage = (function () {
         enumerable: true,
         configurable: true
     });
+    ListPage.prototype.onViewDidLoad = function () {
+    };
     ListPage.prototype.initializeBundles = function () {
         for (var i = 0; i < 16; i++) {
             this.bundles.push({
@@ -510,9 +271,6 @@ var ListPage = (function () {
     };
     ListPage.prototype.onClick = function (cv) {
         if (this.mode == this.Mode.Edit) {
-            this.viewCard(this.getSupposedCardID(cv));
-        }
-        else if (this.mode == this.Mode.Move) {
             var cvID = this.getSupposedCardID(cv);
             var seleIndex = this.selectedCardIDs.indexOf(cvID);
             if (this.selectedCardIDs.length < 1) {
@@ -540,18 +298,29 @@ var ListPage = (function () {
                 this.pdcListView.selectedPDCs.length = 0;
             }
         }
+        else if (this.mode == this.Mode.Deck) {
+            if (cv.model)
+                this.deckListView.add(cv.model.properties.slug);
+        }
         else {
             this.selectedCardIDs.length = 0;
         }
     };
     ListPage.prototype.onDoubleClick = function (cv) {
         if (this.mode == this.Mode.PDCs) {
-            cv.model.setPDC(null);
+            // cv.model.setPDC( null );
+            this.viewCard(this.getSupposedCardID(cv));
+        }
+        else if (this.mode == this.Mode.Edit) {
+            this.viewCard(this.getSupposedCardID(cv));
         }
     };
     ListPage.prototype.onAuxClick = function (cv, e) {
         if (this.mode == this.Mode.PDCs) {
             cv.model.setPDC(null);
+        }
+        else if (this.mode == this.Mode.Edit) {
+            this.viewCard(this.getSupposedCardID(cv));
         }
         else if (this.mode == this.Mode.Quik && cv.model) {
             this.duplicate(cv);
@@ -600,9 +369,6 @@ var ListPage = (function () {
                         break;
                     case "F":
                         this.selectBundle(this.bundles[15]);
-                        break;
-                    case "M":
-                        this.setMode(this.Mode.Move);
                         break;
                     case "V":
                         this.setMode(this.Mode.View);
@@ -715,7 +481,10 @@ var ListPage = (function () {
         while (section.funcIndex < 0)
             section.funcIndex += CardViewBundle.PropsFunctions.length;
     };
-    ListPage.prototype.setMode = function (mode) { this.mode = mode; };
+    ListPage.prototype.setMode = function (mode) {
+        this.mode = mode;
+        localStorage.setItem("mode", mode.name);
+    };
     ListPage.prototype.getPriority = function (cv) {
         switch (cv.model.properties.priority) {
             case 7: return '❕';
@@ -746,12 +515,16 @@ var ListPage = (function () {
         __metadata("design:type", __WEBPACK_IMPORTED_MODULE_5__components_pdc_list_pdc_list__["a" /* PdcListComponent */])
     ], ListPage.prototype, "pdcListView", void 0);
     __decorate([
+        Object(__WEBPACK_IMPORTED_MODULE_0__angular_core__["_8" /* ViewChild */])('deckList'),
+        __metadata("design:type", __WEBPACK_IMPORTED_MODULE_6__components_deck_list_deck_list__["a" /* DeckListComponent */])
+    ], ListPage.prototype, "deckListView", void 0);
+    __decorate([
         Object(__WEBPACK_IMPORTED_MODULE_0__angular_core__["_8" /* ViewChild */])('lescroll'),
         __metadata("design:type", HTMLDivElement)
     ], ListPage.prototype, "lescroll", void 0);
     ListPage = ListPage_1 = __decorate([
         Object(__WEBPACK_IMPORTED_MODULE_0__angular_core__["m" /* Component */])({
-            selector: 'page-list',template:/*ion-inline-start:"C:\Projects Temp\ccgu-admin-tool\src\pages\list\list.html"*/'<ion-header>\n\n  <ion-navbar color="primary">\n\n\n\n    <!-- <button ion-button menuToggle end>\n\n      <ion-icon name="menu"></ion-icon>\n\n    </button> -->\n\n\n\n    <ion-grid grid-padding-width="1px">\n\n      <ion-row class="filters">\n\n        <ion-col no-padding *ngFor="let bundle of bundles">\n\n          <button \n\n            color="light"\n\n            class="page-button"\n\n            [class.selected]="bundle==selectedBundle" \n\n            (click)="selectBundle(bundle)"\n\n            ion-button [clear]="bundle!=selectedBundle"  full round>\n\n            {{ bundle.name }}\n\n          </button>\n\n        </ion-col>\n\n      </ion-row>\n\n    </ion-grid>\n\n\n\n  </ion-navbar>\n\n</ion-header>\n\n\n\n<ion-content no-scroll>\n\n\n\n  <ion-fab bottom right #fabMode>\n\n    <button ion-fab large><ion-icon [name]="mode.icon"></ion-icon></button>\n\n    <ion-fab-list side="left">\n\n      <button ion-fab (click)="setMode(Mode.Edit);fabMode.close()"><ion-icon name="{{Mode.Edit.icon}}"></ion-icon></button>\n\n      <button ion-fab (click)="setMode(Mode.Move);fabMode.close()"><ion-icon name="{{Mode.Move.icon}}"></ion-icon></button>\n\n      <button ion-fab (click)="setMode(Mode.PDCs);fabMode.close()"><ion-icon name="{{Mode.PDCs.icon}}"></ion-icon></button>\n\n      <button ion-fab (click)="setMode(Mode.Quik);fabMode.close()"><ion-icon name="{{Mode.Quik.icon}}"></ion-icon></button>\n\n      <button ion-fab (click)="setMode(Mode.View);fabMode.close()"><ion-icon name="{{Mode.View.icon}}"></ion-icon></button>\n\n    </ion-fab-list>\n\n    <ion-fab-list side="top">\n\n      <button ion-fab (click)="showPrettyName=!showPrettyName;fabMode.close()"><ion-icon name="glasses"></ion-icon></button>\n\n      <button ion-fab (click)="data.saveAll();fabMode.close()"><ion-icon name="cloud-upload"></ion-icon></button>\n\n      <button ion-fab (click)="data.loadAll();fabMode.close()"><ion-icon name="cloud-download"></ion-icon></button>\n\n    </ion-fab-list>\n\n  </ion-fab>\n\n  <ion-fab bottom left #fabZoom>\n\n    <button ion-fab large><ion-icon name="search"></ion-icon></button>\n\n    <ion-fab-list side="top">\n\n      <button ion-fab (click)="zoom=1.00;fabZoom.close();">100%</button>\n\n      <button ion-fab (click)="zoom=0.75;fabZoom.close();">75%</button>\n\n      <button ion-fab (click)="zoom=0.50;fabZoom.close();">50%</button>\n\n      <button ion-fab (click)="zoom=0.25;fabZoom.close();">25%</button>\n\n    </ion-fab-list>\n\n    <ion-fab-list side="right">\n\n      <button ion-fab >{{data.cards.data?data.cards.data.length:\'n/a\'}}</button>\n\n    </ion-fab-list>\n\n  </ion-fab>\n\n  <ion-fab bottom center #fabSave *ngIf="data.anyChanges()" (click)="data.saveAll();fabMode.close()">\n\n    <button ion-fab large [color]="data.isBusy()?\'dark\':\'secondary\'"><ion-icon name="cloud"></ion-icon></button>\n\n  </ion-fab>\n\n\n\n  <div *ngIf="mode==Mode.PDCs" style="width:33%; height:100%; top:0; left:0; position:absolute; overflow:auto; margin:0; padding:0;">\n\n    <div style="max-height:100%; overflow:auto; margin:0; padding:0;">\n\n      <pdc-list #pdcList></pdc-list>\n\n    </div>\n\n  </div>\n\n\n\n  <div #lescroll id="lescroll" \n\n        [style.width]="mode==Mode.PDCs?\'67%\':\'100%\'"\n\n        [style.zoom]="zoom"\n\n        [class]="\'mode-\'+mode.name" \n\n        >\n\n\n\n    <div style.width="{{pageWidth}}px" style.height="{{pageHeight}}px" style="overflow:hidden;">\n\n      <div *ngFor="let cv of cardViews" \n\n            (click)="onClick(cv)"\n\n            (dblclick)="onDoubleClick(cv)"\n\n            (auxclick)="onAuxClick(cv,$event)"\n\n            style.width="{{cardWidth}}px"\n\n            style.height="{{cardHeight}}px"\n\n            style.left="{{getX(cv.index)}}px"\n\n            style.top="{{getY(cv.index)}}px"\n\n            [style.display]="getSupposedCardID(cv)==0?\'none\':\'block\'"\n\n            [class.selected]="isSelected(cv)"\n\n            class="lecard {{getColorClass(cv)}} {{hasData(cv)?\'non-empty\':\'empty\'}}">\n\n        <div *ngIf="hasData(cv) && mode != Mode.Quik">\n\n          <ion-badge class="id" *ngIf="mode.show.indexOf(\'id\')>=0" mode="ios" style="position:absolute; right:5px; top:-5px;" color="light">{{cv.model.ID}}</ion-badge>\n\n          <div class="slug" *ngIf="mode!=Mode.View" [style.opacity]="!showPrettyName||cv.model.hasName?1:.25">\n\n            <b>{{showPrettyName?cv.model.prettyName:cv.model.properties.slug}}</b></div>\n\n          <div class="slug" *ngIf="mode==Mode.View" [style.opacity]="cv.model.hasName?1:.25">{{cv.model.prettyName}}</div>\n\n          <div class="description">\n\n            <div *ngIf="cv.model.properties.tags.length>0" class="tags">{{cv.model.properties.tags.join(\' \')}}</div>\n\n            <div>{{cv.model.prettyDescription}}</div>\n\n          </div>\n\n          <div class="power"      *ngIf="!cv.model.isTrap">{{cv.model.prettyPower}}</div>\n\n          <div class="priority"   *ngIf="mode.show.indexOf(\'priority\')>=0">{{getPriority(cv)}}</div>\n\n          <div class="rarity"     *ngIf="mode.show.indexOf(\'rarity\')>=0">{{getRarity(cv)}}</div>\n\n          <div class="dev-status" *ngIf="mode.show.indexOf(\'status\')>=0" [style.background]="cv.model.prettyStatusColor">{{cv.model.prettyStatus}}</div>\n\n          <div class="name" *ngIf="mode==Mode.PDCs&&getPDC(cv)">{{getPDC(cv).name}}</div>\n\n        </div>\n\n        <div *ngIf="hasData(cv) && mode == Mode.Quik">\n\n          <ion-input type="text" [(ngModel)]="cv.model.properties.slug" class="slug" (change)="onQuickChangeSlug(cv)"></ion-input>\n\n          <textarea type="text"  [(ngModel)]="cv.model.properties.description" class="description" (change)="onQuickChangeDescription(cv)"></textarea>\n\n          <div class="power"      *ngIf="!cv.model.isTrap">{{cv.model.prettyPower}}</div>\n\n          <div class="dev-status" *ngIf="mode.show.indexOf(\'status\')>=0" \n\n              (click)="onClickStatus(cv)"\n\n              [style.background]="cv.model.prettyStatusColor">{{cv.model.prettyStatus}}</div>\n\n          <div class="name" *ngIf="mode==Mode.PDCs&&getPDC(cv)">{{getPDC(cv).name}}</div>\n\n        </div>\n\n        <div *ngIf="cv.model&&cv.model.properties.status==12" \n\n              style="width:100%;height:100%;background:black;opacity:.35;position:absolute;top:0;"></div>\n\n      </div>\n\n\n\n      <!-- <div style="width:100%" style.left="0px" style.top="10px"> Gaaliba </div> -->\n\n\n\n      <div *ngFor="let subsection of selectedBundle.config.subsections; let i = index" \n\n            class="subsection-header"\n\n            style.top="{{getY(i*16*4)}}px">\n\n        <ion-item>\n\n          <button mini clear item-start (click)="cycleBundlePropsFunction(i,-1)">◀</button>\n\n          <button mini clear item-start (click)="cycleBundlePropsFunction(i,1)">▶</button>\n\n          <ion-input [(ngModel)]="subsection.header" ></ion-input>\n\n        </ion-item>\n\n      </div>\n\n    </div>\n\n  </div> \n\n\n\n</ion-content>\n\n\n\n'/*ion-inline-end:"C:\Projects Temp\ccgu-admin-tool\src\pages\list\list.html"*/,
+            selector: 'page-list',template:/*ion-inline-start:"C:\Projects Temp\ccgu-admin-tool\src\pages\list\list.html"*/'<ion-header>\n\n  <ion-navbar color="primary">\n\n\n\n    <!-- <button ion-button menuToggle end>\n\n      <ion-icon name="menu"></ion-icon>\n\n    </button> -->\n\n\n\n    <ion-grid grid-padding-width="1px">\n\n      <ion-row class="filters">\n\n        <ion-col no-padding *ngFor="let bundle of bundles">\n\n          <button \n\n            color="light"\n\n            class="page-button"\n\n            [class.selected]="bundle==selectedBundle" \n\n            (click)="selectBundle(bundle)"\n\n            ion-button [clear]="bundle!=selectedBundle"  full round>\n\n            {{ bundle.name }}\n\n          </button>\n\n        </ion-col>\n\n      </ion-row>\n\n    </ion-grid>\n\n\n\n  </ion-navbar>\n\n</ion-header>\n\n\n\n<ion-content no-scroll>\n\n\n\n  <ion-fab bottom right #fabMode>\n\n    <button ion-fab large><ion-icon [name]="mode.icon"></ion-icon></button>\n\n    <ion-fab-list side="top">\n\n      <button ion-fab (click)="setMode(Mode.View);fabMode.close()"><ion-icon name="{{Mode.View.icon}}"></ion-icon></button>\n\n      <button ion-fab (click)="setMode(Mode.Edit);fabMode.close()"><ion-icon name="{{Mode.Edit.icon}}"></ion-icon></button>\n\n      <button ion-fab (click)="setMode(Mode.Quik);fabMode.close()"><ion-icon name="{{Mode.Quik.icon}}"></ion-icon></button>\n\n      <button ion-fab (click)="setMode(Mode.Deck);fabMode.close()"><ion-icon name="{{Mode.Deck.icon}}"></ion-icon></button>\n\n      <button ion-fab (click)="setMode(Mode.PDCs);fabMode.close()"><ion-icon name="{{Mode.PDCs.icon}}"></ion-icon></button>\n\n    </ion-fab-list>\n\n    <ion-fab-list side="left">\n\n      <button ion-fab (click)="showID=!showID;fabMode.close()">ID</button>\n\n      <button ion-fab (click)="showPrettyName=!showPrettyName;fabMode.close()"><ion-icon name="glasses"></ion-icon></button>\n\n      <button ion-fab (click)="data.saveAll();fabMode.close()"><ion-icon name="cloud-upload"></ion-icon></button>\n\n      <button ion-fab (click)="data.loadAll();fabMode.close()"><ion-icon name="cloud-download"></ion-icon></button>\n\n    </ion-fab-list>\n\n  </ion-fab>\n\n  <ion-fab bottom left #fabZoom>\n\n    <button ion-fab large><ion-icon name="search"></ion-icon></button>\n\n    <ion-fab-list side="top">\n\n      <button ion-fab (click)="zoom=1.00;fabZoom.close();">100%</button>\n\n      <button ion-fab (click)="zoom=0.75;fabZoom.close();">75%</button>\n\n      <button ion-fab (click)="zoom=0.50;fabZoom.close();">50%</button>\n\n      <button ion-fab (click)="zoom=0.25;fabZoom.close();">25%</button>\n\n    </ion-fab-list>\n\n    <ion-fab-list side="right">\n\n      <button ion-fab >{{data.cards.data?data.cards.data.length:\'n/a\'}}</button>\n\n    </ion-fab-list>\n\n  </ion-fab>\n\n  <ion-fab bottom center #fabSave *ngIf="data.anyChanges()" (click)="data.saveAll();fabMode.close()">\n\n    <button ion-fab large [color]="data.isBusy()?\'dark\':\'secondary\'"><ion-icon name="cloud"></ion-icon></button>\n\n  </ion-fab>\n\n\n\n  <div *ngIf="mode==Mode.PDCs" style="width:33%; height:100%; top:0; left:0; position:absolute; overflow:auto; margin:0; padding:0;">\n\n    <div style="max-height:100%; overflow:auto; margin:0; padding:0;">\n\n      <pdc-list #pdcList></pdc-list>\n\n    </div>\n\n  </div>\n\n\n\n  <div *ngIf="mode==Mode.Deck" style="width:33%; height:100%; top:0; left:0; position:absolute; overflow:auto; margin:0; padding:0;">\n\n    <div style="max-height:100%; overflow:auto; margin:0; padding:0;">\n\n      <deck-list #deckList></deck-list>\n\n    </div>\n\n  </div>\n\n\n\n  <div #lescroll id="lescroll" \n\n        [style.width]="mode==Mode.PDCs||mode==Mode.Deck?\'67%\':\'100%\'"\n\n        [style.zoom]="zoom"\n\n        [class]="\'mode-\'+mode.name" \n\n        >\n\n\n\n    <div style.width="{{pageWidth}}px" style.height="{{pageHeight}}px" style="overflow:hidden;">\n\n      <div *ngFor="let cv of cardViews" \n\n            (click)="onClick(cv)"\n\n            (dblclick)="onDoubleClick(cv)"\n\n            (auxclick)="onAuxClick(cv,$event)"\n\n            style.width="{{cardWidth}}px"\n\n            style.height="{{cardHeight}}px"\n\n            style.left="{{getX(cv.index)}}px"\n\n            style.top="{{getY(cv.index)}}px"\n\n            [style.display]="getSupposedCardID(cv)==0?\'none\':\'block\'"\n\n            [class.selected]="isSelected(cv)"\n\n            class="lecard {{getColorClass(cv)}} {{hasData(cv)?\'non-empty\':\'empty\'}}">\n\n        <div *ngIf="hasData(cv) && mode != Mode.Quik">\n\n          <div class="slug" *ngIf="mode!=Mode.View" [style.opacity]="!showPrettyName||cv.model.hasName?1:.25">\n\n            <b>{{showPrettyName?cv.model.prettyName:cv.model.prettySlug}}</b></div>\n\n          <div class="slug" *ngIf="mode==Mode.View" [style.opacity]="cv.model.hasName?1:.25">{{cv.model.prettyName}}</div>\n\n          <div class="description">\n\n            <div *ngIf="cv.model.properties.tags.length>0" class="tags">{{cv.model.properties.tags.join(\' \')}}</div>\n\n            <div>{{cv.model.prettyDescription}}</div>\n\n          </div>\n\n          <div class="power"      *ngIf="!cv.model.isTrap">{{cv.model.prettyPower}}</div>\n\n          <!-- <div class="priority"   *ngIf="mode.show.indexOf(\'priority\')>=0">{{getPriority(cv)}}</div> -->\n\n          <div class="rarity"     *ngIf="mode.show.indexOf(\'rarity\')>=0">{{getRarity(cv)}}</div>\n\n          <div class="dev-status" *ngIf="mode.show.indexOf(\'status\')>=0" [style.background]="cv.model.prettyStatusColor">{{cv.model.prettyStatus}}</div>\n\n          <div class="name" *ngIf="mode==Mode.PDCs&&getPDC(cv)">{{getPDC(cv).name}}</div>\n\n          <div *ngIf="cv.model&&cv.model.properties.status==12" \n\n                style="width:100%;height:100%;background:black;opacity:.35;position:absolute;top:0;"></div>\n\n          <ion-badge class="id" *ngIf="showID" mode="ios" style="position:absolute; right:5px; top:-5px;" color="light">{{cv.model.ID}}</ion-badge>\n\n        </div>\n\n        <div *ngIf="hasData(cv) && mode == Mode.Quik">\n\n          <ion-input type="text" [(ngModel)]="cv.model.properties.slug" class="slug" (change)="onQuickChangeSlug(cv)"></ion-input>\n\n          <textarea type="text"  [(ngModel)]="cv.model.properties.description" class="description" (change)="onQuickChangeDescription(cv)"></textarea>\n\n          <div class="power"      *ngIf="!cv.model.isTrap">{{cv.model.prettyPower}}</div>\n\n          <div class="dev-status" *ngIf="mode.show.indexOf(\'status\')>=0" \n\n              (click)="onClickStatus(cv)"\n\n              [style.background]="cv.model.prettyStatusColor">{{cv.model.prettyStatus}}</div>\n\n          <div class="name" *ngIf="mode==Mode.PDCs&&getPDC(cv)">{{getPDC(cv).name}}</div>\n\n        </div>\n\n      </div>\n\n\n\n      <div *ngFor="let subsection of selectedBundle.config.subsections; let i = index" \n\n            class="subsection-header"\n\n            style.top="{{getY(i*16*4)}}px">\n\n        <ion-item>\n\n          <button mini clear item-start (click)="cycleBundlePropsFunction(i,-1)">◀</button>\n\n          <button mini clear item-start (click)="cycleBundlePropsFunction(i,1)">▶</button>\n\n          <ion-input [(ngModel)]="subsection.header" ></ion-input>\n\n        </ion-item>\n\n      </div>\n\n    </div>\n\n  </div> \n\n\n\n</ion-content>\n\n\n\n'/*ion-inline-end:"C:\Projects Temp\ccgu-admin-tool\src\pages\list\list.html"*/,
             providers: [__WEBPACK_IMPORTED_MODULE_2__providers_data_data__["a" /* DataProvider */]]
         }),
         __metadata("design:paramtypes", [__WEBPACK_IMPORTED_MODULE_4_ionic_angular__["f" /* ModalController */], __WEBPACK_IMPORTED_MODULE_2__providers_data_data__["a" /* DataProvider */]])
@@ -814,7 +587,7 @@ var DP = (function () {
 "use strict";
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return PdcListComponent; });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__angular_core__ = __webpack_require__(0);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__providers_data_data__ = __webpack_require__(102);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__providers_data_data__ = __webpack_require__(50);
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -865,10 +638,11 @@ var PdcListComponent = (function () {
     PdcListComponent.prototype.isSelected = function (pdc) { return this.selectedPDCs.indexOf(pdc) > -1; };
     PdcListComponent.prototype.isExpanded = function (pdc) { return this.expandedPDCs.indexOf(pdc) > -1; };
     PdcListComponent.prototype.hasStuff = function (pdc) { return (Boolean)(pdc.notes_cardstats || pdc.notes_character); };
+    PdcListComponent.prototype.finish = function () { this.data.events.publish("list:resetmode"); };
     PdcListComponent.prototype.stop = function (event) { event.stopPropagation(); };
     PdcListComponent = __decorate([
         Object(__WEBPACK_IMPORTED_MODULE_0__angular_core__["m" /* Component */])({
-            selector: 'pdc-list',template:/*ion-inline-start:"C:\Projects Temp\ccgu-admin-tool\src\components\pdc-list\pdc-list.html"*/'<div style="background:white; overflow:hidden;" #pdcWrapper>\n  <ion-list>\n    <ion-item-group>\n      <!-- <ion-item-divider color="light">Public Domain Characters</ion-item-divider> -->\n      <!-- <div class="pdc-list-item" *ngFor="let pdc of chars; let i = index"> -->\n      <div class="pdc-list-item" *ngFor="let pdc of chars; let i = index" (click)="select(pdc)">\n        <ion-item [class.gray]="data.anyCardHasPDC(pdc)" [class.selected]="isSelected(pdc)" text-wrap>\n          <ion-icon name="arrow-up" (click)="data.createPDC(pdc.origin,i); stop($event)" color="faded" item-start></ion-icon>\n          <ion-icon name="arrow-down" (click)="data.createPDC(pdc.origin,i+1); stop($event)" color="faded" item-start></ion-icon>\n          <ion-input type="text"[(ngModel)]="pdc.origin" class="origin"></ion-input>\n          <ion-input type="text"[(ngModel)]="pdc.name" class="name"></ion-input>\n          <!-- <ion-icon name="arrow-forward" (click)="select(pdc)" color="faded" item-end></ion-icon> -->\n          <ion-icon *ngIf="!isExpanded(pdc)&&hasStuff(pdc)" name="radio-button-on" (click)="expand(pdc);" color="faded" item-end></ion-icon>\n          <ion-icon *ngIf="!isExpanded(pdc)&&!hasStuff(pdc)" name="radio-button-off" (click)="expand(pdc);" color="faded" item-end></ion-icon>\n          <ion-icon *ngIf="isExpanded(pdc)" name="close" (click)="expand(pdc); stop($event)" color="faded" item-end></ion-icon>\n        </ion-item>\n\n        <div *ngIf="isExpanded(pdc)">\n          <ion-textarea placeholder="notes (character)" [(ngModel)]="pdc.notes_character"></ion-textarea>\n          <ion-textarea placeholder="notes (card stats)" [(ngModel)]="pdc.notes_cardstats"></ion-textarea>\n          <ion-textarea placeholder="faction etc." [(ngModel)]="pdc.faction"></ion-textarea>\n          <p class="guid">{{pdc.guid}}</p>\n        </div>\n      </div>\n    </ion-item-group>\n  </ion-list>\n</div>\n'/*ion-inline-end:"C:\Projects Temp\ccgu-admin-tool\src\components\pdc-list\pdc-list.html"*/
+            selector: 'pdc-list',template:/*ion-inline-start:"C:\Projects Temp\ccgu-admin-tool\src\components\pdc-list\pdc-list.html"*/'<div style="background:white; overflow:hidden;" #pdcWrapper>\n  <ion-list>\n    <ion-item-group>\n      <ion-item-divider color="light" (auxclick)="select(null)">\n        <ion-icon name="list" item-start></ion-icon>\n        Public Domain Characters (+)\n        <ion-icon name="close-circle" (click)="finish()" color="faded" item-end></ion-icon>\n      </ion-item-divider>\n      <!-- <ion-item-divider color="light">Public Domain Characters</ion-item-divider> -->\n      <!-- <div class="pdc-list-item" *ngFor="let pdc of chars; let i = index"> -->\n      <div class="pdc-list-item" *ngFor="let pdc of chars; let i = index" (click)="select(pdc)">\n        <ion-item [class.gray]="data.anyCardHasPDC(pdc)" [class.selected]="isSelected(pdc)" text-wrap>\n          <ion-icon name="arrow-up" (click)="data.createPDC(pdc.origin,i); stop($event)" color="faded" item-start></ion-icon>\n          <ion-icon name="arrow-down" (click)="data.createPDC(pdc.origin,i+1); stop($event)" color="faded" item-start></ion-icon>\n          <ion-input type="text"[(ngModel)]="pdc.origin" class="origin"></ion-input>\n          <ion-input type="text"[(ngModel)]="pdc.name" class="name"></ion-input>\n          <!-- <ion-icon name="arrow-forward" (click)="select(pdc)" color="faded" item-end></ion-icon> -->\n          <ion-icon *ngIf="!isExpanded(pdc)&&hasStuff(pdc)" name="radio-button-on" (click)="expand(pdc);" color="faded" item-end></ion-icon>\n          <ion-icon *ngIf="!isExpanded(pdc)&&!hasStuff(pdc)" name="radio-button-off" (click)="expand(pdc);" color="faded" item-end></ion-icon>\n          <ion-icon *ngIf="isExpanded(pdc)" name="close" (click)="expand(pdc); stop($event)" color="faded" item-end></ion-icon>\n        </ion-item>\n\n        <div *ngIf="isExpanded(pdc)">\n          <ion-textarea placeholder="notes (character)" [(ngModel)]="pdc.notes_character"></ion-textarea>\n          <ion-textarea placeholder="notes (card stats)" [(ngModel)]="pdc.notes_cardstats"></ion-textarea>\n          <ion-textarea placeholder="faction etc." [(ngModel)]="pdc.faction"></ion-textarea>\n          <p class="guid">{{pdc.guid}}</p>\n        </div>\n      </div>\n    </ion-item-group>\n  </ion-list>\n</div>\n'/*ion-inline-end:"C:\Projects Temp\ccgu-admin-tool\src\components\pdc-list\pdc-list.html"*/
         }),
         __metadata("design:paramtypes", [__WEBPACK_IMPORTED_MODULE_1__providers_data_data__["a" /* DataProvider */]])
     ], PdcListComponent);
@@ -883,9 +657,126 @@ var PdcListComponent = (function () {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return DeckListComponent; });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__angular_core__ = __webpack_require__(0);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__providers_data_data__ = __webpack_require__(50);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__providers_pretty_pretty__ = __webpack_require__(206);
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+
+
+
+var DeckListComponent = (function () {
+    function DeckListComponent(data, pretty) {
+        this.data = data;
+        this.pretty = pretty;
+    }
+    Object.defineProperty(DeckListComponent.prototype, "decks", {
+        get: function () { return this.data.decks.data; },
+        enumerable: true,
+        configurable: true
+    });
+    DeckListComponent.prototype.select = function (deck) {
+        this.selectedDeck = deck;
+    };
+    DeckListComponent.prototype.add = function (slug) {
+        if (this.selectedDeck)
+            this.selectedDeck.slugs.unshift(slug);
+    };
+    DeckListComponent.prototype.remove = function (index) {
+        if (this.selectedDeck)
+            this.selectedDeck.slugs.splice(index, 1);
+    };
+    DeckListComponent.prototype.move = function (index, offset) {
+        if (index <= 0)
+            return;
+        if (this.selectedDeck) {
+            if (index >= this.selectedDeck.slugs.length)
+                return;
+            var slug = this.selectedDeck.slugs[index];
+            this.selectedDeck.slugs.splice(index, 1);
+            this.selectedDeck.slugs.splice(index + offset, 0, slug);
+        }
+        else {
+            if (index >= this.decks.length)
+                return;
+            var deck = this.decks[index];
+            this.decks.splice(index, 1);
+            this.decks.splice(index + offset, 0, deck);
+        }
+    };
+    DeckListComponent.prototype.finish = function () { this.data.events.publish("list:resetmode"); };
+    DeckListComponent.prototype.stop = function (event) { event.stopPropagation(); };
+    DeckListComponent = __decorate([
+        Object(__WEBPACK_IMPORTED_MODULE_0__angular_core__["m" /* Component */])({
+            selector: 'deck-list',template:/*ion-inline-start:"C:\Projects Temp\ccgu-admin-tool\src\components\deck-list\deck-list.html"*/'<div style="background:white; overflow:hidden;" #pdcWrapper>\n    <ion-list no-lines>\n      <ion-item-group *ngIf="!selectedDeck" no-lines>\n        <ion-item-divider color="light" (auxclick)="select(null)">\n          Dev-Decks\n          <ion-icon name="list" item-start></ion-icon>\n          <ion-icon name="close-circle" (click)="finish()" color="faded" item-end></ion-icon>\n        </ion-item-divider>\n        <div class="deck-list-item" *ngFor="let deck of decks; let i = index" (dblclick)="select(deck)" (auxclick)="move(i,-i)">\n          <ion-item text-wrap>\n            <ion-input type="text"[(ngModel)]="deck.name" class="name" [class.bold]="deck.slugs.length>0"></ion-input>\n            <ion-icon name="arrow-dropright" (click)="select(deck); stop($event)" color="faded" item-start></ion-icon>\n            <ion-icon name="arrow-up" (click)="move(i,-1); stop($event)" color="faded" item-end *ngIf="i>0"></ion-icon>\n            <ion-icon name="arrow-down" (click)="move(i,1); stop($event)" color="faded" item-end *ngIf="i<decks.length-1"></ion-icon>\n            <!-- <ion-icon *ngIf="isExpanded(pdc)" name="close" (click)="expand(pdc); stop($event)" color="faded" item-end></ion-icon> -->\n          </ion-item>\n        </div>\n      </ion-item-group>\n      <ion-item-group *ngIf="selectedDeck" class="cards">\n        <ion-item-divider color="light" (auxclick)="select(null)" (dblclick)="select(null)">\n          Dev-Decks \\ {{selectedDeck.name}}\n          <ion-icon name="list" item-start></ion-icon>\n          <ion-icon name="return-left" (click)="select(null); stop($event)" color="faded" item-end></ion-icon>\n        </ion-item-divider>\n        <div class="card-list-item {{pretty.getColorClass(data.findCardBySlug(slug))}}" \n             *ngFor="let slug of selectedDeck.slugs; let i = index;" \n             (auxclick)="remove(i)">\n          <ion-item text-wrap>\n            {{slug}} ({{data.findCardBySlug(slug) ? data.findCardBySlug(slug).properties.power : "?"}})\n            <ion-icon name="{{i>0?\'arrow-up\':\'remove\'}}" (click)="move(i,-1); stop($event);" color="faded" item-start></ion-icon>\n            <ion-icon name="{{i<selectedDeck.slugs.length-1?\'arrow-down\':\'remove\'}}" (click)="move(i,1); stop($event)" color="faded" item-start></ion-icon>\n            <ion-icon name="close" (click)="remove(i); stop($event)" color="faded" item-end></ion-icon>\n          </ion-item>\n        </div>\n      </ion-item-group>\n    </ion-list>\n  </div>\n  '/*ion-inline-end:"C:\Projects Temp\ccgu-admin-tool\src\components\deck-list\deck-list.html"*/
+        }),
+        __metadata("design:paramtypes", [typeof (_a = typeof __WEBPACK_IMPORTED_MODULE_1__providers_data_data__["a" /* DataProvider */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_1__providers_data_data__["a" /* DataProvider */]) === "function" && _a || Object, typeof (_b = typeof __WEBPACK_IMPORTED_MODULE_2__providers_pretty_pretty__["a" /* PrettyProvider */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_2__providers_pretty_pretty__["a" /* PrettyProvider */]) === "function" && _b || Object])
+    ], DeckListComponent);
+    return DeckListComponent;
+    var _a, _b;
+}());
+
+//# sourceMappingURL=deck-list.js.map
+
+/***/ }),
+
+/***/ 206:
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return PrettyProvider; });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__angular_core__ = __webpack_require__(0);
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+
+var PrettyProvider = (function () {
+    function PrettyProvider() {
+    }
+    PrettyProvider.prototype.getColorClass = function (model) {
+        if (model) {
+            if (model.isTrap)
+                return "trap";
+            if (model.isGrand)
+                return "grand";
+            if (model.isSneak)
+                return "sneak";
+            return "normal";
+        }
+        return "null";
+    };
+    PrettyProvider = __decorate([
+        Object(__WEBPACK_IMPORTED_MODULE_0__angular_core__["A" /* Injectable */])(),
+        __metadata("design:paramtypes", [])
+    ], PrettyProvider);
+    return PrettyProvider;
+}());
+
+//# sourceMappingURL=pretty.js.map
+
+/***/ }),
+
+/***/ 207:
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__angular_platform_browser_dynamic__ = __webpack_require__(206);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__app_module__ = __webpack_require__(227);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__angular_platform_browser_dynamic__ = __webpack_require__(208);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__app_module__ = __webpack_require__(229);
 
 
 Object(__WEBPACK_IMPORTED_MODULE_0__angular_platform_browser_dynamic__["a" /* platformBrowserDynamic */])().bootstrapModule(__WEBPACK_IMPORTED_MODULE_1__app_module__["a" /* AppModule */]);
@@ -893,7 +784,7 @@ Object(__WEBPACK_IMPORTED_MODULE_0__angular_platform_browser_dynamic__["a" /* pl
 
 /***/ }),
 
-/***/ 227:
+/***/ 229:
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -902,21 +793,25 @@ Object(__WEBPACK_IMPORTED_MODULE_0__angular_platform_browser_dynamic__["a" /* pl
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__angular_core__ = __webpack_require__(0);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_ionic_angular__ = __webpack_require__(29);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__angular_common_http__ = __webpack_require__(196);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__app_component__ = __webpack_require__(274);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__app_component__ = __webpack_require__(276);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__pages_home_home__ = __webpack_require__(201);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__pages_list_list__ = __webpack_require__(202);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__pages_card_view_card_view__ = __webpack_require__(50);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__pages_card_view_card_view__ = __webpack_require__(51);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_8__ionic_native_status_bar__ = __webpack_require__(197);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_9__ionic_native_splash_screen__ = __webpack_require__(200);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_10__directives_autosize_autosize__ = __webpack_require__(293);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_11__providers_data_data__ = __webpack_require__(102);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_10__directives_autosize_autosize__ = __webpack_require__(295);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_11__providers_data_data__ = __webpack_require__(50);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_12__components_pdc_list_pdc_list__ = __webpack_require__(204);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_13__components_deck_list_deck_list__ = __webpack_require__(205);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_14__providers_pretty_pretty__ = __webpack_require__(206);
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+
+
 
 
 
@@ -941,7 +836,8 @@ var AppModule = (function () {
                 __WEBPACK_IMPORTED_MODULE_6__pages_list_list__["a" /* ListPage */],
                 __WEBPACK_IMPORTED_MODULE_7__pages_card_view_card_view__["a" /* CardViewPage */],
                 __WEBPACK_IMPORTED_MODULE_10__directives_autosize_autosize__["a" /* AutosizeDirective */],
-                __WEBPACK_IMPORTED_MODULE_12__components_pdc_list_pdc_list__["a" /* PdcListComponent */]
+                __WEBPACK_IMPORTED_MODULE_12__components_pdc_list_pdc_list__["a" /* PdcListComponent */],
+                __WEBPACK_IMPORTED_MODULE_13__components_deck_list_deck_list__["a" /* DeckListComponent */]
             ],
             imports: [
                 __WEBPACK_IMPORTED_MODULE_0__angular_platform_browser__["a" /* BrowserModule */],
@@ -963,7 +859,8 @@ var AppModule = (function () {
                 __WEBPACK_IMPORTED_MODULE_8__ionic_native_status_bar__["a" /* StatusBar */],
                 __WEBPACK_IMPORTED_MODULE_9__ionic_native_splash_screen__["a" /* SplashScreen */],
                 { provide: __WEBPACK_IMPORTED_MODULE_1__angular_core__["u" /* ErrorHandler */], useClass: __WEBPACK_IMPORTED_MODULE_2_ionic_angular__["c" /* IonicErrorHandler */] },
-                __WEBPACK_IMPORTED_MODULE_11__providers_data_data__["a" /* DataProvider */]
+                __WEBPACK_IMPORTED_MODULE_11__providers_data_data__["a" /* DataProvider */],
+                __WEBPACK_IMPORTED_MODULE_14__providers_pretty_pretty__["a" /* PrettyProvider */]
             ]
         })
     ], AppModule);
@@ -974,7 +871,7 @@ var AppModule = (function () {
 
 /***/ }),
 
-/***/ 274:
+/***/ 276:
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -1043,7 +940,7 @@ var MyApp = (function () {
 
 /***/ }),
 
-/***/ 293:
+/***/ 295:
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -1099,10 +996,287 @@ var AutosizeDirective = (function () {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return DataProvider; });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__angular_common_http__ = __webpack_require__(196);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__angular_core__ = __webpack_require__(0);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_ionic_angular__ = __webpack_require__(29);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__app_models__ = __webpack_require__(80);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4_rxjs_add_operator_map__ = __webpack_require__(285);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4_rxjs_add_operator_map___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_4_rxjs_add_operator_map__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5_rxjs_add_operator_timeout__ = __webpack_require__(286);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5_rxjs_add_operator_timeout___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_5_rxjs_add_operator_timeout__);
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+
+
+
+
+
+
+var DataProvider = (function () {
+    function DataProvider(http, events, toast) {
+        var _this = this;
+        this.http = http;
+        this.events = events;
+        this.toast = toast;
+        this.FILE_CARDS = "card-models.json";
+        this.FILE_CONFIG = "editor-stuff.json";
+        this.FILE_PDC = "pdc.json";
+        this.FILE_DECKS = "decks.json";
+        this.cardsMap = new Map();
+        this.pdcMap = new Map();
+        this.config = new DataFile(this.FILE_CONFIG, http);
+        this.cards = new DataFile(this.FILE_CARDS, http);
+        this.pdc = new DataFile(this.FILE_PDC, http);
+        this.decks = new DataFile(this.FILE_DECKS, http);
+        this.config.data = new ConfigurationData();
+        this.datafiles = [this.config, this.cards, this.pdc, this.decks];
+        this.loadAll();
+        setInterval(function () { return _this.checkForChanges(); }, 2000);
+    }
+    DataProvider.prototype.isBusy = function () { return this.saving || !this.datafiles.every(function (v, i, a) { return !v.busy; }); };
+    DataProvider.prototype.anyChanges = function () { return !this.datafiles.every(function (v, i, a) { return !v.dataHasChanged; }); };
+    DataProvider.prototype.checkForChanges = function () { this.datafiles.forEach(function (v) { v.checkForChanges(); }); };
+    DataProvider.prototype.createCard = function (id) {
+        var card = __WEBPACK_IMPORTED_MODULE_3__app_models__["a" /* CardModel */].makeClean(id);
+        card.properties.power = 0;
+        card.properties.priority = 0;
+        card.properties.rarity = 0;
+        card.properties.status = 0;
+        card.properties.type = __WEBPACK_IMPORTED_MODULE_3__app_models__["b" /* CardType */].Unit;
+        card.properties.slug = "";
+        card.properties.name = "";
+        card.properties.description = "";
+        card.properties.tags = [];
+        this.cardsMap[id] = card;
+        this.cards.data.unshift(card.properties);
+        this.cards.dataHasChanged = true;
+        return card;
+    };
+    DataProvider.prototype.createPDC = function (origin, at) {
+        var pdc = {
+            origin: origin,
+            name: "",
+            notes_character: "",
+            notes_cardstats: "",
+            tags: [],
+            faction: "",
+            guid: GUID.make()
+        };
+        this.pdc.data.splice(at, 0, pdc);
+        return pdc;
+    };
+    DataProvider.prototype.deleteCard = function (id) {
+        delete this.cardsMap[id];
+        for (var i = this.cards.data.length - 1; i >= 0; i--)
+            if (this.cards.data[i].id == id)
+                this.cards.data.splice(i, 1);
+        this.cards.dataHasChanged = true;
+    };
+    DataProvider.prototype.getCardSectionData = function (index) { return this.config.data.cardSections[index % this.config.data.cardSections.length]; };
+    DataProvider.prototype.anyCardHasPDC = function (pdc) {
+        if (!this.cards.data)
+            return false;
+        for (var i = 0; i < this.cards.data.length; i++)
+            if (this.cards.data[i].pdc == pdc.guid)
+                return true;
+        return false;
+    };
+    DataProvider.prototype.findCardBySlug = function (slug) {
+        return this.cardsMap[this.findCardDataBySlug(slug).id];
+        for (var _i = 0, _a = Array.from(this.cardsMap.values()); _i < _a.length; _i++) {
+            var card = _a[_i];
+            if (card.properties.slug == slug)
+                return card;
+        }
+        return null;
+    };
+    DataProvider.prototype.findCardDataBySlug = function (slug) {
+        for (var i = 0; i < this.cards.data.length; i++)
+            if (this.cards.data[i].slug == slug)
+                return this.cards.data[i];
+        return null;
+    };
+    ///
+    DataProvider.prototype.loadAll = function () {
+        var _this = this;
+        console.log("loading data from github gist");
+        this.config.load(function (data) { return _this.onLoaded_Configuration(data); });
+        this.cards.load(function (data) { return _this.onLoaded_Cards(data); });
+        this.pdc.load(function (data) { return _this.onLoaded_PDCharacters(data); });
+        this.decks.load(function (data) { return _this.onLoaded_Decks(data); });
+    };
+    DataProvider.prototype.onLoaded_Configuration = function (data) {
+        this.events.publish("data:reload");
+    };
+    DataProvider.prototype.onLoaded_Cards = function (data) {
+        // for ( let i = data.length - 1; i >= 0; i-- )
+        // {
+        //   for ( let j = data.length - 1; j > i; j-- )
+        //   {
+        //     let a = data[i], b = data[j];
+        //     if ( a.slug == b.slug && a.description == b.description )
+        //     {
+        //       console.log( "duplicate cards: " + a.id + " = " + b.id + " " + a.slug );
+        //       this.cards.data.splice( a.id > b.id ? i : j, 1 );
+        //     }
+        //   }
+        // }
+        // for ( let i = data.length - 1; i >= 0; i-- )
+        // {
+        //   for ( let j = data.length - 1; j > i; j-- )
+        //   {
+        //     let a = data[i], b = data[j];
+        //     if ( a.id == b.id )
+        //     {
+        //       console.log( "id collision: " + a.slug + " vs " + b.slug );
+        //       a.id += 256;
+        //     }
+        //   }
+        // }
+        // this.cardsMap.clear();
+        this.cardsMap = new Map();
+        for (var i = 0; i < data.length; i++)
+            this.cardsMap[data[i].id] = __WEBPACK_IMPORTED_MODULE_3__app_models__["a" /* CardModel */].makeFromData(data[i]);
+        this.events.publish("data:reload");
+    };
+    DataProvider.prototype.onLoaded_PDCharacters = function (data) {
+        for (var i = data.length - 1; i >= 0; i--)
+            this.pdcMap[data[i].guid] = data[i];
+        this.events.publish("data:reload");
+    };
+    DataProvider.prototype.onLoaded_Decks = function (data) {
+        // for ( let i = 4; i < 64; i++ )
+        //   this.decks.data.push({name:"("+i+")",slugs:[]})
+        this.events.publish("data:reload");
+    };
+    DataProvider.prototype.sortPDCs = function () {
+        this.pdc.data.sort(sortFunction);
+        function sortFunction(aa, bb) {
+            var a = aa.origin.toUpperCase();
+            var b = bb.origin.toUpperCase();
+            return a < b ? -1 : a > b ? 1 : 0;
+        }
+    };
+    DataProvider.prototype.saveAll = function () {
+        var _this = this;
+        this.sortPDCs();
+        var token = "6dae67b6" + "f3085406" + "f57a9412";
+        token += "c1d8d6ef";
+        token += "5d888863";
+        var url = "https://api.github.com/gists/4c390b3e5502811d196233104c89f755";
+        var headers = new __WEBPACK_IMPORTED_MODULE_0__angular_common_http__["c" /* HttpHeaders */]().set("Authorization", "token  " + token);
+        var files = {};
+        this.datafiles.forEach(function (datafile) {
+            if (datafile.dataHasChanged)
+                files[datafile.filename] = { content: JSON.stringify(datafile.data, null, 2) };
+        });
+        this.saving = true;
+        this.http.post(url, { files: files }, { headers: headers })
+            .subscribe(function (data) {
+            console.log("saved", data);
+            _this.saving = false;
+            _this.datafiles.forEach(function (datafile) { return datafile.updateOriginalState(); });
+            _this.showToast("Data Saved");
+        });
+    };
+    DataProvider.prototype.showToast = function (msg) {
+        this.toast.create({ message: msg, duration: 1500 }).present();
+    };
+    DataProvider = __decorate([
+        Object(__WEBPACK_IMPORTED_MODULE_1__angular_core__["A" /* Injectable */])(),
+        __metadata("design:paramtypes", [typeof (_a = typeof __WEBPACK_IMPORTED_MODULE_0__angular_common_http__["a" /* HttpClient */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_0__angular_common_http__["a" /* HttpClient */]) === "function" && _a || Object, typeof (_b = typeof __WEBPACK_IMPORTED_MODULE_2_ionic_angular__["a" /* Events */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_2_ionic_angular__["a" /* Events */]) === "function" && _b || Object, typeof (_c = typeof __WEBPACK_IMPORTED_MODULE_2_ionic_angular__["k" /* ToastController */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_2_ionic_angular__["k" /* ToastController */]) === "function" && _c || Object])
+    ], DataProvider);
+    return DataProvider;
+    var _a, _b, _c;
+}());
+
+var DataFile = (function () {
+    function DataFile(filename, http) {
+        this.filename = filename;
+        this.http = http;
+        this.URL_FILE = "https://gist.githubusercontent.com/choephix/4c390b3e5502811d196233104c89f755/raw/";
+    }
+    DataFile.prototype.load = function (callbackLoaded) {
+        var _this = this;
+        console.log("loading " + this.filename);
+        var headers = new __WEBPACK_IMPORTED_MODULE_0__angular_common_http__["c" /* HttpHeaders */]();
+        headers.set("content-type", "application/json");
+        headers.set('cache-control', 'no-cache');
+        // headers.set( 'x-apikey', '5acb82b08f64a5337173a18a' );
+        this.busy = true;
+        var url_cards = this.URL_FILE + this.filename + this.cacheBustSuffix();
+        this.http.get(url_cards, { headers: headers }).subscribe(function (data) {
+            console.log("loaded " + _this.filename, data);
+            _this.busy = false;
+            _this.data = data;
+            _this.updateOriginalState();
+            callbackLoaded(_this.data);
+        });
+    };
+    DataFile.prototype.updateOriginalState = function () {
+        this.dataOriginalJson = JSON.stringify(this.data);
+        this.dataHasChanged = false;
+    };
+    DataFile.prototype.checkForChanges = function () {
+        this.dataHasChanged = this.dataOriginalJson != JSON.stringify(this.data);
+    };
+    DataFile.prototype.cacheBustSuffix = function () { return '?' + (new Date().valueOf() % 1000000); };
+    return DataFile;
+}());
+var ConfigurationData = (function () {
+    function ConfigurationData() {
+        this.cardSections = [
+            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
+            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
+            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
+            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
+            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
+            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
+            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
+            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
+            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
+            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
+            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
+            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
+            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
+            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
+            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
+            { subsections: [{ funcIndex: 0, header: "One" }, { funcIndex: 0, header: "Two" }, { funcIndex: 0, header: "Three" }, { funcIndex: 0, header: "Four" }] },
+        ];
+    }
+    return ConfigurationData;
+}());
+var GUID = (function () {
+    function GUID() {
+    }
+    GUID.make = function () {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    };
+    return GUID;
+}());
+//# sourceMappingURL=data.js.map
+
+/***/ }),
+
+/***/ 51:
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return CardViewPage; });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__angular_core__ = __webpack_require__(0);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_ionic_angular__ = __webpack_require__(29);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__app_models__ = __webpack_require__(79);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__app_models__ = __webpack_require__(80);
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -1160,7 +1334,7 @@ var CardViewPage = (function () {
     };
     CardViewPage = __decorate([
         Object(__WEBPACK_IMPORTED_MODULE_0__angular_core__["m" /* Component */])({
-            selector: 'page-card-view',template:/*ion-inline-start:"C:\Projects Temp\ccgu-admin-tool\src\pages\card-view\card-view.html"*/'<ion-content padding [class]="getColorClass()+\' pad\'">\n\n\n\n  <ion-input type="text" class="slug" [(ngModel)]="card.properties.slug"></ion-input>\n\n\n\n  <ion-grid no-padding #hidablePower class="power-options hidable" [class.hidden]="true">\n\n    <ion-row>\n\n      <ion-col col-2><button ion-button clear large full (click)="toggle(hidablePower);card.setIsTrapType(true)">Trap</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 1);toggle(hidablePower)"> 1</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 2);toggle(hidablePower)"> 2</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 3);toggle(hidablePower)"> 3</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 4);toggle(hidablePower)"> 4</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 5);toggle(hidablePower)"> 5</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 6);toggle(hidablePower)"> 6</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 7);toggle(hidablePower)"> 7</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 8);toggle(hidablePower)"> 8</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 9);toggle(hidablePower)"> 9</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(10);toggle(hidablePower)">10</button></ion-col>\n\n    </ion-row>\n\n    <ion-row>\n\n      <ion-col col-2><button ion-button clear large full (click)="setPower( 0);toggle(hidablePower)"> 0</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(11);toggle(hidablePower)">11</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(12);toggle(hidablePower)">12</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(13);toggle(hidablePower)">13</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(14);toggle(hidablePower)">14</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(15);toggle(hidablePower)">15</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(16);toggle(hidablePower)">16</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(17);toggle(hidablePower)">17</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(18);toggle(hidablePower)">18</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(19);toggle(hidablePower)">19</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(20);toggle(hidablePower)">20</button></ion-col>\n\n    </ion-row>\n\n  </ion-grid>\n\n\n\n  <ion-input type="text" class="name" [(ngModel)]="card.properties.name"></ion-input>\n\n    \n\n  <ion-textarea [(ngModel)]="card.properties.description"></ion-textarea>\n\n\n\n  <ion-grid no-padding grid-padding-width="1px" class="tags">\n\n      <ion-row>\n\n        <ion-col no-padding *ngFor="let tag of tags">\n\n          <button ion-button mini class="tag-button" \n\n                  [outline]="card.properties.tags.indexOf(tag)<0"\n\n                  (click)="card.toggleTag(tag)">{{tag}}</button>\n\n        </ion-col>\n\n      </ion-row>\n\n  </ion-grid>\n\n\n\n  <div ion-item full #buttonStatus\n\n          color="devstatus-{{card.properties.status}}"\n\n          class="status-button status-label hidable" \n\n          [class.hidden]="false" \n\n          (click)="toggle(hidableStatus)"\n\n          style="text-align:center;color:black;"\n\n           >{{getPrettyStatus(card.properties.status)}}</div>\n\n  \n\n  <ion-grid no-padding #hidableStatus class="status-options hidable" [class.hidden]="true">\n\n    <ion-row>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-0" (click)="setStatus(0);toggle(hidableStatus);" >{{getPrettyStatus(0)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-1" (click)="setStatus(1);toggle(hidableStatus);" >{{getPrettyStatus(1)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-2" (click)="setStatus(2);toggle(hidableStatus);" >{{getPrettyStatus(2)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-3" (click)="setStatus(3);toggle(hidableStatus);" >{{getPrettyStatus(3)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-4" (click)="setStatus(4);toggle(hidableStatus);" >{{getPrettyStatus(4)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-5" (click)="setStatus(5);toggle(hidableStatus);" >{{getPrettyStatus(5)}}</div></ion-col>\n\n    </ion-row>\n\n    <ion-row>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-6"  (click)="setStatus(6);toggle(hidableStatus);" >{{getPrettyStatus(6)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-7"  (click)="setStatus(7);toggle(hidableStatus);" >{{getPrettyStatus(7)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-8"  (click)="setStatus(8);toggle(hidableStatus);" >{{getPrettyStatus(8)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-9"  (click)="setStatus(9);toggle(hidableStatus);" >{{getPrettyStatus(9)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-10" (click)="setStatus(10);toggle(hidableStatus);">{{getPrettyStatus(10)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-11" (click)="setStatus(11);toggle(hidableStatus);">{{getPrettyStatus(11)}}</div></ion-col>\n\n    </ion-row>\n\n  </ion-grid>\n\n    \n\n  <ion-grid no-padding #hidablePriority class="priority-options hidable" [class.hidden]="false">\n\n    <ion-row>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 0 > card.properties.priority" (click)="setPriority(0);" >➖</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 1 > card.properties.priority" (click)="setPriority(1);" >🖤</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 2 > card.properties.priority" (click)="setPriority(2);" >🖤</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 3 > card.properties.priority" (click)="setPriority(3);" >💚</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 4 > card.properties.priority" (click)="setPriority(4);" >💚</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 5 > card.properties.priority" (click)="setPriority(5);" >💙</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 6 > card.properties.priority" (click)="setPriority(6);" >💙</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 7 > card.properties.priority" (click)="setPriority(7);" >💜</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 8 > card.properties.priority" (click)="setPriority(8);" >💜</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 9 > card.properties.priority" (click)="setPriority(9);" >🧡</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]="10 > card.properties.priority" (click)="setPriority(10);">🧡</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPriority(-1);">✖</button></ion-col>\n\n    </ion-row>\n\n  </ion-grid>\n\n\n\n  <ion-grid no-padding #hidableRarity class="rarity-options hidable" [class.hidden]="false">\n\n    <ion-row>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 0 > card.properties.rarity" (click)="setRarity(0);" >➖</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 1 > card.properties.rarity" (click)="setRarity(1);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 2 > card.properties.rarity" (click)="setRarity(2);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 3 > card.properties.rarity" (click)="setRarity(3);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 4 > card.properties.rarity" (click)="setRarity(4);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 5 > card.properties.rarity" (click)="setRarity(5);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 6 > card.properties.rarity" (click)="setRarity(6);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 7 > card.properties.rarity" (click)="setRarity(7);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 8 > card.properties.rarity" (click)="setRarity(8);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 9 > card.properties.rarity" (click)="setRarity(9);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]="10 > card.properties.rarity" (click)="setRarity(10);">⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setRarity(-1);">✖</button></ion-col>\n\n    </ion-row>\n\n  </ion-grid>\n\n  \n\n\n\n  <ion-fab top left class="power-fab">\n\n    <button ion-fab large color="primary" (click)="hidablePower.classList.toggle(\'hidden\')"  color="light">\n\n        {{card.isTrap?"🤐":card.prettyPower}}\n\n    </button>\n\n  </ion-fab>\n\n\n\n  <ion-fab bottom right>\n\n    <button ion-fab large color="primary"><ion-icon name="more"></ion-icon></button>\n\n    <ion-fab-list side="left">\n\n        <button ion-fab large color="primary" (click)="delete()"><ion-icon name="trash"></ion-icon></button>\n\n    </ion-fab-list>\n\n  </ion-fab>\n\n  \n\n  <ion-fab top right>\n\n    <button ion-fab large color="primary" (click)="save()">\n\n      <ion-icon name="checkmark"></ion-icon>\n\n    </button>\n\n  </ion-fab>\n\n\n\n</ion-content>'/*ion-inline-end:"C:\Projects Temp\ccgu-admin-tool\src\pages\card-view\card-view.html"*/,
+            selector: 'page-card-view',template:/*ion-inline-start:"C:\Projects Temp\ccgu-admin-tool\src\pages\card-view\card-view.html"*/'<ion-content padding [class]="getColorClass()+\' pad\'">\n\n\n\n  <ion-input type="text" class="slug" [(ngModel)]="card.properties.slug"></ion-input>\n\n\n\n  <ion-grid no-padding #hidablePower class="power-options hidable" [class.hidden]="true">\n\n    <ion-row>\n\n      <ion-col col-2><button ion-button clear large full (click)="toggle(hidablePower);card.setIsTrapType(true)">Trap</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 1);toggle(hidablePower)"> 1</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 2);toggle(hidablePower)"> 2</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 3);toggle(hidablePower)"> 3</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 4);toggle(hidablePower)"> 4</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 5);toggle(hidablePower)"> 5</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 6);toggle(hidablePower)"> 6</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 7);toggle(hidablePower)"> 7</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 8);toggle(hidablePower)"> 8</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower( 9);toggle(hidablePower)"> 9</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(10);toggle(hidablePower)">10</button></ion-col>\n\n    </ion-row>\n\n    <ion-row>\n\n      <ion-col col-2><button ion-button clear large full (click)="setPower( 0);toggle(hidablePower)"> 0</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(11);toggle(hidablePower)">11</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(12);toggle(hidablePower)">12</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(13);toggle(hidablePower)">13</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(14);toggle(hidablePower)">14</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(15);toggle(hidablePower)">15</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(16);toggle(hidablePower)">16</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(17);toggle(hidablePower)">17</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(18);toggle(hidablePower)">18</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(19);toggle(hidablePower)">19</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPower(20);toggle(hidablePower)">20</button></ion-col>\n\n    </ion-row>\n\n  </ion-grid>\n\n\n\n  <ion-input type="text" class="name" [(ngModel)]="card.properties.name"></ion-input>\n\n    \n\n  <ion-textarea [(ngModel)]="card.properties.description"></ion-textarea>\n\n\n\n  <ion-grid no-padding grid-padding-width="1px" class="tags">\n\n      <ion-row>\n\n        <ion-col no-padding *ngFor="let tag of tags">\n\n          <button ion-button mini class="tag-button" \n\n                  [outline]="card.properties.tags.indexOf(tag)<0"\n\n                  (click)="card.toggleTag(tag)">{{tag}}</button>\n\n        </ion-col>\n\n      </ion-row>\n\n  </ion-grid>\n\n\n\n  <div ion-item full #buttonStatus\n\n          color="devstatus-{{card.properties.status}}"\n\n          class="status-button status-label hidable" \n\n          [class.hidden]="false" \n\n          (click)="toggle(hidableStatus)"\n\n          style="text-align:center;color:black;"\n\n           >{{getPrettyStatus(card.properties.status)}}</div>\n\n  \n\n  <ion-grid no-padding #hidableStatus class="status-options hidable" [class.hidden]="true">\n\n    <ion-row>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-0" (click)="setStatus(0);toggle(hidableStatus);" >{{getPrettyStatus(0)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-1" (click)="setStatus(1);toggle(hidableStatus);" >{{getPrettyStatus(1)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-2" (click)="setStatus(2);toggle(hidableStatus);" >{{getPrettyStatus(2)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-3" (click)="setStatus(3);toggle(hidableStatus);" >{{getPrettyStatus(3)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-4" (click)="setStatus(4);toggle(hidableStatus);" >{{getPrettyStatus(4)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-5" (click)="setStatus(5);toggle(hidableStatus);" >{{getPrettyStatus(5)}}</div></ion-col>\n\n    </ion-row>\n\n    <ion-row>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-6"  (click)="setStatus(6);toggle(hidableStatus);" >{{getPrettyStatus(6)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-7"  (click)="setStatus(7);toggle(hidableStatus);" >{{getPrettyStatus(7)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-8"  (click)="setStatus(8);toggle(hidableStatus);" >{{getPrettyStatus(8)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-9"  (click)="setStatus(9);toggle(hidableStatus);" >{{getPrettyStatus(9)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-10" (click)="setStatus(10);toggle(hidableStatus);">{{getPrettyStatus(10)}}</div></ion-col>\n\n      <ion-col col-2><div ion-item class="status-label" color="devstatus-11" (click)="setStatus(11);toggle(hidableStatus);">{{getPrettyStatus(11)}}</div></ion-col>\n\n    </ion-row>\n\n  </ion-grid>\n\n    \n\n  <ion-grid no-padding #hidablePriority class="priority-options hidable" [class.hidden]="false">\n\n    <ion-row>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 0 > card.properties.priority" (click)="setPriority(0);" >➖</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 1 > card.properties.priority" (click)="setPriority(1);" >🖤</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 2 > card.properties.priority" (click)="setPriority(2);" >🖤</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 3 > card.properties.priority" (click)="setPriority(3);" >💚</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 4 > card.properties.priority" (click)="setPriority(4);" >💚</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 5 > card.properties.priority" (click)="setPriority(5);" >💙</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 6 > card.properties.priority" (click)="setPriority(6);" >💙</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 7 > card.properties.priority" (click)="setPriority(7);" >💜</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 8 > card.properties.priority" (click)="setPriority(8);" >💜</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 9 > card.properties.priority" (click)="setPriority(9);" >🧡</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]="10 > card.properties.priority" (click)="setPriority(10);">🧡</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setPriority(-1); setStatus(12);">✖</button></ion-col>\n\n    </ion-row>\n\n  </ion-grid>\n\n\n\n  <ion-grid no-padding #hidableRarity class="rarity-options hidable" [class.hidden]="false">\n\n    <ion-row>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 0 > card.properties.rarity" (click)="setRarity(0);" >➖</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 1 > card.properties.rarity" (click)="setRarity(1);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 2 > card.properties.rarity" (click)="setRarity(2);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 3 > card.properties.rarity" (click)="setRarity(3);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 4 > card.properties.rarity" (click)="setRarity(4);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 5 > card.properties.rarity" (click)="setRarity(5);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 6 > card.properties.rarity" (click)="setRarity(6);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 7 > card.properties.rarity" (click)="setRarity(7);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 8 > card.properties.rarity" (click)="setRarity(8);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]=" 9 > card.properties.rarity" (click)="setRarity(9);" >⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full [class.faded]="10 > card.properties.rarity" (click)="setRarity(10);">⭐</button></ion-col>\n\n      <ion-col col-1><button ion-button clear large full (click)="setRarity(-1);">✖</button></ion-col>\n\n    </ion-row>\n\n  </ion-grid>\n\n  \n\n\n\n  <ion-fab top left class="power-fab">\n\n    <button ion-fab large color="primary" (click)="hidablePower.classList.toggle(\'hidden\')"  color="light">\n\n        {{card.isTrap?"🤐":card.prettyPower}}\n\n    </button>\n\n  </ion-fab>\n\n\n\n  <ion-fab bottom right>\n\n    <button ion-fab large color="primary"><ion-icon name="more"></ion-icon></button>\n\n    <ion-fab-list side="left">\n\n        <button ion-fab large color="primary" (click)="delete()"><ion-icon name="trash"></ion-icon></button>\n\n    </ion-fab-list>\n\n  </ion-fab>\n\n  \n\n  <ion-fab top right>\n\n    <button ion-fab large color="primary" (click)="save()">\n\n      <ion-icon name="checkmark"></ion-icon>\n\n    </button>\n\n  </ion-fab>\n\n\n\n</ion-content>'/*ion-inline-end:"C:\Projects Temp\ccgu-admin-tool\src\pages\card-view\card-view.html"*/,
         }),
         __metadata("design:paramtypes", [__WEBPACK_IMPORTED_MODULE_1_ionic_angular__["h" /* NavController */], __WEBPACK_IMPORTED_MODULE_1_ionic_angular__["i" /* NavParams */]])
     ], CardViewPage);
@@ -1171,7 +1345,7 @@ var CardViewPage = (function () {
 
 /***/ }),
 
-/***/ 79:
+/***/ 80:
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -1180,6 +1354,7 @@ var CardViewPage = (function () {
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "b", function() { return CardType; });
 /* unused harmony export CardData */
 /* unused harmony export PDCharacterData */
+/* unused harmony export DeckData */
 /* unused harmony export CardSectionData */
 /* unused harmony export CardSubSectionData */
 var CardModel = (function () {
@@ -1218,7 +1393,12 @@ var CardModel = (function () {
         configurable: true
     });
     Object.defineProperty(CardModel.prototype, "prettyName", {
-        get: function () { return this.hasName ? this.properties.name : this.properties.slug; },
+        get: function () { return this.hasName ? this.properties.name : this.prettySlug; },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(CardModel.prototype, "prettySlug", {
+        get: function () { return this.properties.slug ? this.properties.slug : "-"; },
         enumerable: true,
         configurable: true
     });
@@ -1283,7 +1463,7 @@ var CardModel = (function () {
         { text: "Ready", color: "#FFF" },
         { text: "Published", color: "none" },
         { text: "Retired", color: "none" },
-        { text: "Skip", color: "#333" },
+        { text: "Skip", color: "#888" },
     ];
     return CardModel;
 }());
@@ -1323,6 +1503,12 @@ var PDCharacterData = (function () {
     return PDCharacterData;
 }());
 
+var DeckData = (function () {
+    function DeckData() {
+    }
+    return DeckData;
+}());
+
 var CardSectionData = (function () {
     function CardSectionData() {
         this.subsections = [
@@ -1345,5 +1531,5 @@ var CardSubSectionData = (function () {
 
 /***/ })
 
-},[205]);
+},[207]);
 //# sourceMappingURL=main.js.map

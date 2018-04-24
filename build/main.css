@@ -81818,6 +81818,71 @@ ion-navbar.toolbar {
   min-height: calc(20px + env(safe-area-inset-bottom));
 }
 
+deck-list .bold {
+  font-weight: bolder;
+}
+
+deck-list .item-md ion-icon[item-left] + .item-inner, deck-list .item-md ion-icon[item-left] + .item-input, deck-list .item-md ion-icon[item-start] + .item-inner, deck-list .item-md ion-icon[item-start] + .item-input {
+  margin-left: 0;
+}
+
+deck-list .list-md .item-input.ng-valid.item-input-has-value:not(.input-has-focus):not(.item-input-has-focus):last-child, deck-list .list-md .item-input.ng-valid.input-has-value:not(.input-has-focus):not(.item-input-has-focus):last-child {
+  border-bottom: #e4e4e4 1px solid;
+  -webkit-box-shadow: none;
+  box-shadow: none;
+}
+
+deck-list .item-md {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+deck-list .item-block {
+  min-height: 0px;
+}
+
+deck-list .item-md ion-icon[item-left], deck-list .item-md ion-icon[item-right], deck-list .item-md ion-icon[item-start], deck-list .item-md ion-icon[item-end] {
+  margin: 0;
+  margin-right: 6px;
+}
+
+deck-list .text-input-md, deck-list .label-md {
+  margin: 4px 0px;
+  padding: 1px;
+}
+
+deck-list .item-divider .input-wrapper {
+  margin: 8px 0px;
+}
+
+deck-list .card-list-item {
+  border-bottom: rgba(0, 0, 0, 0.33) 1px solid;
+}
+
+deck-list .card-list-item .label {
+  font-weight: bold;
+}
+
+deck-list .card-list-item.sneak .item {
+  background: -webkit-gradient(linear, right top, left top, from(#FFF), to(#EA4));
+  background: linear-gradient(to left, #FFF, #EA4);
+}
+
+deck-list .card-list-item.normal .item {
+  background: -webkit-gradient(linear, right top, left top, from(#FFF), to(#EC8));
+  background: linear-gradient(to left, #FFF, #EC8);
+}
+
+deck-list .card-list-item.grand .item {
+  background: -webkit-gradient(linear, right top, left top, from(#FFF), to(#EED));
+  background: linear-gradient(to left, #FFF, #EED);
+}
+
+deck-list .card-list-item.trap .item {
+  background: -webkit-gradient(linear, right top, left top, from(#FFF), to(#ECE));
+  background: linear-gradient(to left, #FFF, #ECE);
+}
+
 pdc-list input, pdc-list .text-input,
 pdc-list .icon, pdc-list .item-icon,
 pdc-list .label {
@@ -81861,6 +81926,14 @@ pdc-list .guid {
 pdc-list ion-textarea textarea {
   min-height: 100px;
   margin-left: 4px !important;
+}
+
+pdc-list .item-divider {
+  padding: 0px 0px;
+}
+
+pdc-list .item-divider .icon {
+  margin: 8px 8px;
 }
 
 pdc-list .gray {
@@ -82199,15 +82272,19 @@ page-list #lescroll.mode-edit {
   background-color: #789;
 }
 
-page-list #lescroll.mode-move {
-  background-color: #5d8ef2;
-}
-
 page-list #lescroll.mode-pdcs {
   background-color: rosybrown;
 }
 
 page-list #lescroll.mode-pdcs .lecard.empty {
+  opacity: 0.05;
+}
+
+page-list #lescroll.mode-deck {
+  background-color: #5d8ef2;
+}
+
+page-list #lescroll.mode-deck .lecard.empty {
   opacity: 0.05;
 }
 
