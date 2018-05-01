@@ -642,11 +642,12 @@ var PdcListComponent = (function () {
     PdcListComponent.prototype.stop = function (event) { event.stopPropagation(); };
     PdcListComponent = __decorate([
         Object(__WEBPACK_IMPORTED_MODULE_0__angular_core__["m" /* Component */])({
-            selector: 'pdc-list',template:/*ion-inline-start:"C:\Projects Temp\ccgu-admin-tool\src\components\pdc-list\pdc-list.html"*/'<div style="background:white; overflow:hidden;" #pdcWrapper>\n  <ion-list>\n    <ion-item-group>\n      <ion-item-divider color="light" (auxclick)="select(null)">\n        <ion-icon name="list" item-start></ion-icon>\n        Public Domain Characters (+)\n        <ion-icon name="close-circle" (click)="finish()" color="faded" item-end></ion-icon>\n      </ion-item-divider>\n      <!-- <ion-item-divider color="light">Public Domain Characters</ion-item-divider> -->\n      <!-- <div class="pdc-list-item" *ngFor="let pdc of chars; let i = index"> -->\n      <div class="pdc-list-item" *ngFor="let pdc of chars; let i = index" (click)="select(pdc)">\n        <ion-item [class.gray]="data.anyCardHasPDC(pdc)" [class.selected]="isSelected(pdc)" text-wrap>\n          <ion-icon name="arrow-up" (click)="data.createPDC(pdc.origin,i); stop($event)" color="faded" item-start></ion-icon>\n          <ion-icon name="arrow-down" (click)="data.createPDC(pdc.origin,i+1); stop($event)" color="faded" item-start></ion-icon>\n          <ion-input type="text"[(ngModel)]="pdc.origin" class="origin"></ion-input>\n          <ion-input type="text"[(ngModel)]="pdc.name" class="name"></ion-input>\n          <!-- <ion-icon name="arrow-forward" (click)="select(pdc)" color="faded" item-end></ion-icon> -->\n          <ion-icon *ngIf="!isExpanded(pdc)&&hasStuff(pdc)" name="radio-button-on" (click)="expand(pdc);" color="faded" item-end></ion-icon>\n          <ion-icon *ngIf="!isExpanded(pdc)&&!hasStuff(pdc)" name="radio-button-off" (click)="expand(pdc);" color="faded" item-end></ion-icon>\n          <ion-icon *ngIf="isExpanded(pdc)" name="close" (click)="expand(pdc); stop($event)" color="faded" item-end></ion-icon>\n        </ion-item>\n\n        <div *ngIf="isExpanded(pdc)">\n          <ion-textarea placeholder="notes (character)" [(ngModel)]="pdc.notes_character"></ion-textarea>\n          <ion-textarea placeholder="notes (card stats)" [(ngModel)]="pdc.notes_cardstats"></ion-textarea>\n          <ion-textarea placeholder="faction etc." [(ngModel)]="pdc.faction"></ion-textarea>\n          <p class="guid">{{pdc.guid}}</p>\n        </div>\n      </div>\n    </ion-item-group>\n  </ion-list>\n</div>\n'/*ion-inline-end:"C:\Projects Temp\ccgu-admin-tool\src\components\pdc-list\pdc-list.html"*/
+            selector: 'pdc-list',template:/*ion-inline-start:"C:\Projects Temp\ccgu-admin-tool\src\components\pdc-list\pdc-list.html"*/'<div style="background:white; overflow:hidden;" #pdcWrapper>\n\n  <ion-list>\n\n    <ion-item-divider color="light" (auxclick)="select(null)">\n\n      Public Domain Characters (+)\n\n      <ion-icon name="close-circle" (click)="finish()" color="faded" item-start></ion-icon>\n\n      <ion-icon name="add" (click)="editMode=!editMode" color="faded" item-end></ion-icon>\n\n      <ion-icon name="reorder" (click)="reorderMode=!reorderMode" color="faded" item-end></ion-icon>\n\n    </ion-item-divider>\n\n    <ion-item-group [reorder]="reorderMode">\n\n      <!-- <ion-item-divider color="light">Public Domain Characters</ion-item-divider> -->\n\n      <!-- <div class="pdc-list-item" *ngFor="let pdc of chars; let i = index"> -->\n\n      <div class="pdc-list-item" *ngFor="let pdc of chars; let i = index" (click)="select(pdc)">\n\n        <ion-item [class.gray]="data.anyCardHasPDC(pdc)" [class.selected]="isSelected(pdc)" text-wrap>\n\n          <ion-icon *ngIf="editMode" name="arrow-up" (click)="data.createPDC(pdc.origin,i); stop($event)" color="faded" item-start></ion-icon>\n\n          <ion-icon *ngIf="editMode" name="arrow-down" (click)="data.createPDC(pdc.origin,i+1); stop($event)" color="faded" item-start></ion-icon>\n\n          <ion-input type="text"[(ngModel)]="pdc.origin" class="origin"></ion-input>\n\n          <ion-input type="text"[(ngModel)]="pdc.name" class="name"></ion-input>\n\n          <!-- <ion-icon name="arrow-forward" (click)="select(pdc)" color="faded" item-end></ion-icon> -->\n\n          <ion-icon *ngIf="!isExpanded(pdc)" [name]="\'radio-button-\'+(hasStuff(pdc)?\'on\':\'off\')" (click)="expand(pdc);" color="faded" item-end></ion-icon>\n\n          <ion-icon *ngIf="isExpanded(pdc)" name="close" (click)="expand(pdc); stop($event)" color="faded" item-end></ion-icon>\n\n        </ion-item>\n\n\n\n        <div *ngIf="isExpanded(pdc)" class="xp">\n\n          <ion-textarea placeholder="notes (character)" [(ngModel)]="pdc.notes_character"></ion-textarea>\n\n          <ion-textarea placeholder="notes (card stats)" [(ngModel)]="pdc.notes_cardstats"></ion-textarea>\n\n          <ion-textarea placeholder="faction etc." [(ngModel)]="pdc.faction"></ion-textarea>\n\n          <p class="guid">{{pdc.guid}}</p>\n\n        </div>\n\n      </div>\n\n    </ion-item-group>\n\n  </ion-list>\n\n</div>\n\n'/*ion-inline-end:"C:\Projects Temp\ccgu-admin-tool\src\components\pdc-list\pdc-list.html"*/
         }),
-        __metadata("design:paramtypes", [__WEBPACK_IMPORTED_MODULE_1__providers_data_data__["a" /* DataProvider */]])
+        __metadata("design:paramtypes", [typeof (_a = typeof __WEBPACK_IMPORTED_MODULE_1__providers_data_data__["a" /* DataProvider */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_1__providers_data_data__["a" /* DataProvider */]) === "function" && _a || Object])
     ], PdcListComponent);
     return PdcListComponent;
+    var _a;
 }());
 
 //# sourceMappingURL=pdc-list.js.map
@@ -683,8 +684,9 @@ var DeckListComponent = (function () {
         enumerable: true,
         configurable: true
     });
-    DeckListComponent.prototype.select = function (deck) {
+    DeckListComponent.prototype.selectDeck = function (deck) {
         this.selectedDeck = deck;
+        this.reorderMode = false;
     };
     DeckListComponent.prototype.add = function (slug) {
         if (this.selectedDeck)
@@ -712,11 +714,21 @@ var DeckListComponent = (function () {
             this.decks.splice(index + offset, 0, deck);
         }
     };
+    DeckListComponent.prototype.reorderDecks = function (indexes) {
+        var deck = this.decks[indexes.from];
+        this.decks.splice(indexes.from, 1);
+        this.decks.splice(indexes.to, 0, deck);
+    };
+    DeckListComponent.prototype.reorderCards = function (indexes) {
+        var slug = this.selectedDeck.slugs[indexes.from];
+        this.selectedDeck.slugs.splice(indexes.from, 1);
+        this.selectedDeck.slugs.splice(indexes.to, 0, slug);
+    };
     DeckListComponent.prototype.finish = function () { this.data.events.publish("list:resetmode"); };
     DeckListComponent.prototype.stop = function (event) { event.stopPropagation(); };
     DeckListComponent = __decorate([
         Object(__WEBPACK_IMPORTED_MODULE_0__angular_core__["m" /* Component */])({
-            selector: 'deck-list',template:/*ion-inline-start:"C:\Projects Temp\ccgu-admin-tool\src\components\deck-list\deck-list.html"*/'<div style="background:white; overflow:hidden;" #pdcWrapper>\n    <ion-list no-lines>\n      <ion-item-group *ngIf="!selectedDeck" no-lines>\n        <ion-item-divider color="light" (auxclick)="select(null)">\n          Dev-Decks\n          <ion-icon name="list" item-start></ion-icon>\n          <ion-icon name="close-circle" (click)="finish()" color="faded" item-end></ion-icon>\n        </ion-item-divider>\n        <div class="deck-list-item" *ngFor="let deck of decks; let i = index" (dblclick)="select(deck)" (auxclick)="move(i,-i)">\n          <ion-item text-wrap>\n            <ion-input type="text"[(ngModel)]="deck.name" class="name" [class.bold]="deck.slugs.length>0"></ion-input>\n            <ion-icon name="arrow-dropright" (click)="select(deck); stop($event)" color="faded" item-start></ion-icon>\n            <ion-icon name="arrow-up" (click)="move(i,-1); stop($event)" color="faded" item-end *ngIf="i>0"></ion-icon>\n            <ion-icon name="arrow-down" (click)="move(i,1); stop($event)" color="faded" item-end *ngIf="i<decks.length-1"></ion-icon>\n            <!-- <ion-icon *ngIf="isExpanded(pdc)" name="close" (click)="expand(pdc); stop($event)" color="faded" item-end></ion-icon> -->\n          </ion-item>\n        </div>\n      </ion-item-group>\n      <ion-item-group *ngIf="selectedDeck" class="cards">\n        <ion-item-divider color="light" (auxclick)="select(null)" (dblclick)="select(null)">\n          Dev-Decks \\ {{selectedDeck.name}}\n          <ion-icon name="list" item-start></ion-icon>\n          <ion-icon name="return-left" (click)="select(null); stop($event)" color="faded" item-end></ion-icon>\n        </ion-item-divider>\n        <div class="card-list-item {{pretty.getColorClass(data.findCardBySlug(slug))}}" \n             *ngFor="let slug of selectedDeck.slugs; let i = index;" \n             (auxclick)="remove(i)">\n          <ion-item text-wrap>\n            {{slug}} ({{data.findCardBySlug(slug) ? data.findCardBySlug(slug).properties.power : "?"}})\n            <ion-icon name="{{i>0?\'arrow-up\':\'remove\'}}" (click)="move(i,-1); stop($event);" color="faded" item-start></ion-icon>\n            <ion-icon name="{{i<selectedDeck.slugs.length-1?\'arrow-down\':\'remove\'}}" (click)="move(i,1); stop($event)" color="faded" item-start></ion-icon>\n            <ion-icon name="close" (click)="remove(i); stop($event)" color="faded" item-end></ion-icon>\n          </ion-item>\n        </div>\n      </ion-item-group>\n    </ion-list>\n  </div>\n  '/*ion-inline-end:"C:\Projects Temp\ccgu-admin-tool\src\components\deck-list\deck-list.html"*/
+            selector: 'deck-list',template:/*ion-inline-start:"C:\Projects Temp\ccgu-admin-tool\src\components\deck-list\deck-list.html"*/'<div style="background:white; overflow:hidden;" #pdcWrapper>\n\n\n\n  <ion-list no-lines *ngIf="!selectedDeck">\n\n    <ion-list-header color="light" (auxclick)="selectDeck(null)">\n\n      Dev-Decks\n\n      <ion-icon name="close-circle" (click)="finish()" color="faded" item-start></ion-icon>\n\n      <ion-icon name="reorder" (click)="reorderMode=!reorderMode" color="faded" item-end></ion-icon>\n\n    </ion-list-header>\n\n    <ion-item-group class="decks" [reorder]="reorderMode" no-lines (ionItemReorder)="reorderDecks($event)">\n\n      <div class="deck-list-item" *ngFor="let deck of decks; let i = index" (dblclick)="selectDeck(deck)" (auxclick)="move(i,-i)">\n\n        <ion-item text-wrap>\n\n          <ion-input type="text"[(ngModel)]="deck.name" class="name" [class.bold]="deck.slugs.length>0"></ion-input>\n\n          <!-- <ion-icon *ngIf="isExpanded(pdc)" name="close" (click)="expand(pdc); stop($event)" color="faded" item-end></ion-icon> -->\n\n        </ion-item>\n\n      </div>\n\n    </ion-item-group>\n\n  </ion-list>\n\n  \n\n  <ion-list no-lines *ngIf="selectedDeck">\n\n    <ion-list-header color="light" (auxclick)="selectDeck(null)" (dblclick)="selectDeck(null)">\n\n      Dev-Decks \\ {{selectedDeck.name}}\n\n      <ion-icon name="arrow-round-back" (click)="selectDeck(null); stop($event)" color="faded" item-start></ion-icon>\n\n      <ion-icon name="reorder" (click)="reorderMode=!reorderMode" color="faded" item-end></ion-icon>\n\n    </ion-list-header>\n\n    <ion-item-group class="cards" [reorder]="reorderMode" (ionItemReorder)="reorderCards($event)">\n\n      <div class="card-list-item {{pretty.getColorClass(data.findCardBySlug(slug))}}" \n\n            *ngFor="let slug of selectedDeck.slugs; let i = index;" \n\n            (auxclick)="remove(i)">\n\n        <ion-item text-wrap>\n\n          {{slug}} ({{data.findCardBySlug(slug) ? data.findCardBySlug(slug).properties.power : "?"}})\n\n          <ion-icon *ngIf="!reorderMode" name="close" (click)="remove(i); stop($event)" color="faded" item-end></ion-icon>\n\n        </ion-item>\n\n      </div>\n\n    </ion-item-group>\n\n  </ion-list>\n\n\n\n</div>\n\n  \n\n'/*ion-inline-end:"C:\Projects Temp\ccgu-admin-tool\src\components\deck-list\deck-list.html"*/
         }),
         __metadata("design:paramtypes", [typeof (_a = typeof __WEBPACK_IMPORTED_MODULE_1__providers_data_data__["a" /* DataProvider */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_1__providers_data_data__["a" /* DataProvider */]) === "function" && _a || Object, typeof (_b = typeof __WEBPACK_IMPORTED_MODULE_2__providers_pretty_pretty__["a" /* PrettyProvider */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_2__providers_pretty_pretty__["a" /* PrettyProvider */]) === "function" && _b || Object])
     ], DeckListComponent);
@@ -1091,12 +1103,10 @@ var DataProvider = (function () {
     };
     DataProvider.prototype.findCardBySlug = function (slug) {
         return this.cardsMap[this.findCardDataBySlug(slug).id];
-        for (var _i = 0, _a = Array.from(this.cardsMap.values()); _i < _a.length; _i++) {
-            var card = _a[_i];
-            if (card.properties.slug == slug)
-                return card;
-        }
-        return null;
+        // for( let card of Array.from( this.cardsMap.values() ) )
+        //   if ( card.properties.slug == slug )
+        //     return card;
+        // return null;
     };
     DataProvider.prototype.findCardDataBySlug = function (slug) {
         for (var i = 0; i < this.cards.data.length; i++)
@@ -1192,10 +1202,9 @@ var DataProvider = (function () {
     };
     DataProvider = __decorate([
         Object(__WEBPACK_IMPORTED_MODULE_1__angular_core__["A" /* Injectable */])(),
-        __metadata("design:paramtypes", [typeof (_a = typeof __WEBPACK_IMPORTED_MODULE_0__angular_common_http__["a" /* HttpClient */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_0__angular_common_http__["a" /* HttpClient */]) === "function" && _a || Object, typeof (_b = typeof __WEBPACK_IMPORTED_MODULE_2_ionic_angular__["a" /* Events */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_2_ionic_angular__["a" /* Events */]) === "function" && _b || Object, typeof (_c = typeof __WEBPACK_IMPORTED_MODULE_2_ionic_angular__["k" /* ToastController */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_2_ionic_angular__["k" /* ToastController */]) === "function" && _c || Object])
+        __metadata("design:paramtypes", [__WEBPACK_IMPORTED_MODULE_0__angular_common_http__["a" /* HttpClient */], __WEBPACK_IMPORTED_MODULE_2_ionic_angular__["a" /* Events */], __WEBPACK_IMPORTED_MODULE_2_ionic_angular__["k" /* ToastController */]])
     ], DataProvider);
     return DataProvider;
-    var _a, _b, _c;
 }());
 
 var DataFile = (function () {

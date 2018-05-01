@@ -81855,6 +81855,11 @@ deck-list .item-divider .input-wrapper {
   margin: 8px 0px;
 }
 
+deck-list .item-inner, deck-list .list-header {
+  margin: 0;
+  padding: 0px 8px;
+}
+
 deck-list .card-list-item {
   border-bottom: rgba(0, 0, 0, 0.33) 1px solid;
 }
@@ -81921,6 +81926,14 @@ pdc-list .guid {
   text-align: center;
   opacity: .25;
   font-size: 10px;
+}
+
+pdc-list .xp {
+  background: #FAFCFF;
+}
+
+pdc-list .xp p {
+  margin: 0;
 }
 
 pdc-list ion-textarea textarea {
