@@ -1178,9 +1178,12 @@ var DataProvider = (function () {
     DataProvider.prototype.saveAll = function () {
         var _this = this;
         this.sortPDCs();
-        var token = "3df2b4b3" + "0f36cede" + "444bd6d0";
-        token += "0b8494d7";
-        token += "2a1c53e9";
+        var token = "";
+        token += "3df2b4b3"
+        token += "0f36cede"
+        token += "444bd6d0"
+        token += "0b8494d7"
+        token += "2a1c53e9"
         var url = "https://api.github.com/gists/4c390b3e5502811d196233104c89f755";
         var headers = new __WEBPACK_IMPORTED_MODULE_0__angular_common_http__["c" /* HttpHeaders */]().set("Authorization", "token  " + token);
         var files = {};
