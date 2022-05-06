@@ -1184,7 +1184,7 @@ var DataProvider = (function () {
         token += "444bd6d0"
         token += "0b8494d7"
         token += "2a1c53e9"
-        var url = "https://api.github.com/gists/4c390b3e5502811d196233104c89f755";
+        var url = "https://raw.githubusercontent.com/choephix/ccgu-loadable-data/master";
         var headers = new __WEBPACK_IMPORTED_MODULE_0__angular_common_http__["c" /* HttpHeaders */]().set("Authorization", "token  " + token);
         var files = {};
         this.datafiles.forEach(function (datafile) {
@@ -1214,7 +1214,7 @@ var DataFile = (function () {
     function DataFile(filename, http) {
         this.filename = filename;
         this.http = http;
-        this.URL_FILE = "https://gist.githubusercontent.com/choephix/4c390b3e5502811d196233104c89f755/raw/";
+        this.URL_FILE = "https://raw.githubusercontent.com/choephix/ccgu-loadable-data/master/";
     }
     DataFile.prototype.load = function (callbackLoaded) {
         var _this = this;
